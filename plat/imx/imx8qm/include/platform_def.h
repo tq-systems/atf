@@ -93,7 +93,7 @@
 #ifdef SPD_trusty
 #define DEBUG_CONSOLE_A53		1
 #else
-#define DEBUG_CONSOLE_A53		0
+#define DEBUG_CONSOLE_A53		DEBUG_CONSOLE
 #endif
 
 #endif /* PLATFORM_DEF_H */
