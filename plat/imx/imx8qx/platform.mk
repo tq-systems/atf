@@ -58,3 +58,9 @@ endif
 ifeq (${FIPS_CONFIG},on)
 	BL31_CFLAGS    +=      -DFIPS_CONFIG
 endif
+
+IMX_DEBUG_UART		?= 	0
+$(eval $(call add_define,IMX_USE_UART${IMX_DEBUG_UART}))
+
+DEBUG_CONSOLE		?= 	0
+$(eval $(call add_define,DEBUG_CONSOLE))
