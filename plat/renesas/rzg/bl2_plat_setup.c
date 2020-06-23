@@ -73,7 +73,10 @@ extern void rcar_dma_init(void);
 static void bl2_init_generic_timer(void);
 
 /* R-Car Gen3 product check */
-#if RCAR_LSI == RCAR_M3
+#if RCAR_LSI == RCAR_H3N
+#define TARGET_PRODUCT			PRR_PRODUCT_H3
+#define TARGET_NAME			"RZ/G2H"
+#elif RCAR_LSI == RCAR_M3
 #define TARGET_PRODUCT			PRR_PRODUCT_M3
 #define TARGET_NAME			"RZ/G2M"
 #elif RCAR_LSI == RCAR_M3N
@@ -468,6 +471,7 @@ static void bl2_populate_compatible_string(void *dt)
 		ret = fdt_setprop_string(dt, 0, "compatible",
 					 "renesas,draak");
 		break;
+	case BOARD_HIHOPE_RZG2H:
 	case BOARD_HIHOPE_RZG2M:
 	case BOARD_HIHOPE_RZG2N:
 		ret = fdt_setprop_string(dt, 0, "compatible",
@@ -491,7 +495,7 @@ static void bl2_populate_compatible_string(void *dt)
 	switch (reg & PRR_PRODUCT_MASK) {
 	case PRR_PRODUCT_H3:
 		ret = fdt_appendprop_string(dt, 0, "compatible",
-					    "renesas,r8a7795");
+					    "renesas,r8a774e1");
 		break;
 	case PRR_PRODUCT_M3:
 		ret = fdt_appendprop_string(dt, 0, "compatible",
@@ -679,7 +683,7 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 	const char *cpu_ca57 = "CA57";
 	const char *cpu_ca53 = "CA53";
 	const char *product_m3n = "G2N";
-	const char *product_h3 = "H3";
+	const char *product_h3 = "G2H";
 	const char *product_m3 = "G2M";
 	const char *product_e3 = "G2E";
 	const char *product_d3 = "D3";
@@ -801,6 +805,7 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 	rcar_get_board_type(&type, &rev);
 
 	switch (type) {
+	case BOARD_HIHOPE_RZG2H:
 	case BOARD_HIHOPE_RZG2M:
 	case BOARD_HIHOPE_RZG2N:
 	case BOARD_EK874:

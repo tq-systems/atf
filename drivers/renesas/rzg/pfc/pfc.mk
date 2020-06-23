@@ -7,8 +7,12 @@
 ifeq (${RCAR_LSI},${RCAR_AUTO})
     BL2_SOURCES += drivers/renesas/rzg/pfc/G2M/pfc_init_m3.c
     BL2_SOURCES += drivers/renesas/rzg/pfc/G2N/pfc_init_m3n.c
+    BL2_SOURCES += drivers/renesas/rzg/pfc/G2H/pfc_init_h3_v2.c
 
 else ifdef RCAR_LSI_CUT_COMPAT
+  ifeq (${RCAR_LSI},${RCAR_H3N})
+    BL2_SOURCES += drivers/renesas/rzg/pfc/G2H/pfc_init_h3_v2.c
+  endif
   ifeq (${RCAR_LSI},${RCAR_M3})
     BL2_SOURCES += drivers/renesas/rzg/pfc/G2M/pfc_init_m3.c
   endif
@@ -19,6 +23,9 @@ else ifdef RCAR_LSI_CUT_COMPAT
     BL2_SOURCES += drivers/renesas/rzg/pfc/G2E/pfc_init_e3.c
   endif
 else
+  ifeq (${RCAR_LSI},${RCAR_H3N})
+    BL2_SOURCES += drivers/renesas/rzg/pfc/G2H/pfc_init_h3_v2.c
+  endif
   ifeq (${RCAR_LSI},${RCAR_M3})
     BL2_SOURCES += drivers/renesas/rzg/pfc/G2M/pfc_init_m3.c
   endif

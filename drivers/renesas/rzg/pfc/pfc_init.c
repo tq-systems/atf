@@ -13,6 +13,7 @@
 #if RCAR_LSI == RCAR_AUTO
 #include "G2M/pfc_init_m3.h"
 #include "G2N/pfc_init_m3n.h"
+#include "G2H/pfc_init_h3_v2.h"
 #endif
 #if RCAR_LSI == RCAR_M3		/* G2M */
 #include "G2M/pfc_init_m3.h"
@@ -22,6 +23,9 @@
 #endif
 #if RCAR_LSI == RCAR_E3		/* G2E */
 #include "G2E/pfc_init_e3.h"
+#endif
+#if RCAR_LSI == RCAR_H3N	/* G2H */
+#include "G2H/pfc_init_h3_v2.h"
 #endif
 
 #define PRR_PRODUCT_ERR(reg)				\
@@ -45,6 +49,9 @@ void rcar_pfc_init(void)
 	reg = mmio_read_32(RCAR_PRR);
 #if RCAR_LSI == RCAR_AUTO
 	switch (reg & PRR_PRODUCT_MASK) {
+        case PRR_PRODUCT_H3:
+		pfc_init_h3_v2();
+		break;
 	case PRR_PRODUCT_M3:
 		pfc_init_m3();
 		break;
@@ -58,6 +65,13 @@ void rcar_pfc_init(void)
 
 #elif RCAR_LSI_CUT_COMPAT
 	switch (reg & PRR_PRODUCT_MASK) {
+	case PRR_PRODUCT_H3:
+#if (RCAR_LSI != RCAR_H3N)
+		PRR_PRODUCT_ERR(reg);
+#else
+		pfc_init_h3_v2();
+#endif
+                break;
 	case PRR_PRODUCT_M3:
 #if RCAR_LSI != RCAR_M3
 		PRR_PRODUCT_ERR(reg);
@@ -85,6 +99,13 @@ void rcar_pfc_init(void)
 	}
 
 #else
+#if (RCAR_LSI == RCAR_H3N)	/* H3N */
+	/* H3 Ver.2.0 or later */
+	if (PRR_PRODUCT_H3 != (reg & PRR_PRODUCT_MASK)) {
+		PRR_PRODUCT_ERR(reg);
+	}
+	pfc_init_h3_v2();
+#endif
 #if RCAR_LSI == RCAR_M3	/* M3 */
 	if ((PRR_PRODUCT_M3) != (reg & PRR_PRODUCT_MASK)) {
 		PRR_PRODUCT_ERR(reg);

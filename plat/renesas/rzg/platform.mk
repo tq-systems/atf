@@ -28,10 +28,12 @@ endif
 RCAR_M3:=1
 RCAR_M3N:=2
 RCAR_E3:=3
+RCAR_H3N:=4
 RCAR_AUTO:=99
 $(eval $(call add_define,RCAR_M3))
 $(eval $(call add_define,RCAR_M3N))
 $(eval $(call add_define,RCAR_E3))
+$(eval $(call add_define,RCAR_H3N))
 $(eval $(call add_define,RCAR_AUTO))
 RCAR_CUT_10:=0
 RCAR_CUT_11:=1
@@ -49,6 +51,21 @@ ifndef LSI
 else
   ifeq (${LSI},AUTO)
     RCAR_LSI:=${RCAR_AUTO}
+  else ifeq (${LSI},G2H)
+    RCAR_LSI:=${RCAR_H3N}
+    ifndef LSI_CUT
+      # enable compatible function.
+      RCAR_LSI_CUT_COMPAT := 1
+      $(eval $(call add_define,RCAR_LSI_CUT_COMPAT))
+    else
+      # disable compatible function.
+      ifeq (${LSI_CUT},30)
+        RCAR_LSI_CUT:=20
+      else
+        $(error "Error: ${LSI_CUT} is not supported.")
+      endif
+      $(eval $(call add_define,RCAR_LSI_CUT))
+    endif
   else ifeq (${LSI},G2M)
     RCAR_LSI:=${RCAR_M3}
     ifndef LSI_CUT
@@ -293,6 +310,12 @@ ifndef RZG_HIHOPE_RZG2N
 RZG_HIHOPE_RZG2N := 0
 endif
 $(eval $(call add_define,RZG_HIHOPE_RZG2N))
+
+#Process HIHOPE RZ/G2H flag
+ifndef RZG_HIHOPE_RZG2H
+RZG_HIHOPE_RZG2H := 0
+endif
+$(eval $(call add_define,RZG_HIHOPE_RZG2H))
 
 # Enable workarounds for selected Cortex-A53 erratas.
 ERRATA_A53_835769  := 1

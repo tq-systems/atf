@@ -18,6 +18,8 @@
 #define BOARD_DEFAULT		(BOARD_EK874 << BOARD_CODE_SHIFT)
 #elif (RCAR_LSI == RCAR_M3N)
 #define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2N << BOARD_CODE_SHIFT)
+#elif (RCAR_LSI == RCAR_H3N)
+#define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2H << BOARD_CODE_SHIFT)
 #else
 #define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2M << BOARD_CODE_SHIFT)
 #endif
@@ -39,6 +41,7 @@
 #define KK_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define HM_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define HN_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define HH_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define EK_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 
 const char *g_board_tbl[] = {
@@ -53,6 +56,7 @@ const char *g_board_tbl[] = {
 	[BOARD_EAGLE] = "Eagle",
 	[BOARD_HIHOPE_RZG2M]	= "HiHope RZ/G2M",
 	[BOARD_HIHOPE_RZG2N]	= "HiHope RZ/G2N",
+	[BOARD_HIHOPE_RZG2H]	= "HiHope RZ/G2H",
 	[BOARD_EK874]			= "EK874 RZ/G2E",
 	[BOARD_UNKNOWN] = "unknown"
 };
@@ -72,6 +76,7 @@ int32_t rcar_get_board_type(uint32_t *type, uint32_t *rev)
 		[BOARD_KRIEK] = KK_ID,
 		[BOARD_HIHOPE_RZG2M] = HM_ID,
 		[BOARD_HIHOPE_RZG2M] = HN_ID,
+		[BOARD_HIHOPE_RZG2H] = HH_ID,
 		[BOARD_EK874] = EK_ID,
 	};
 	static uint8_t board_id = BOARD_ID_UNKNOWN;
