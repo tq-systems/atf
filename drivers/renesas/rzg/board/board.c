@@ -10,6 +10,8 @@
 #include <lib/utils_def.h>
 
 #include <iic_dvfs.h>
+#include <lib/mmio.h>
+#include "rcar_def.h"
 
 #include "board.h"
 
@@ -30,6 +32,11 @@
 #define BOARD_CODE_SHIFT	(0x03)
 #define BOARD_ID_UNKNOWN	(0xFF)
 
+#define		GPIO_INDT5	0xE605500C
+#define		GP5_19_BIT	(0x01 << 19)
+#define		GP5_21_BIT	(0x01 << 21)
+#define		GP5_25_BIT	(0x01 << 25)
+
 #define SXS_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define SX_ID	{ 0x10U, 0x11U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define SKP_ID	{ 0x10U, 0x10U, 0x20U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
@@ -40,7 +47,7 @@
 #define EA_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define KK_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define HM_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
-#define HN_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define HN_ID	{ 0x20U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define HH_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define EK_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 
@@ -75,11 +82,19 @@ int32_t rcar_get_board_type(uint32_t *type, uint32_t *rev)
 		[BOARD_EAGLE] = EA_ID,
 		[BOARD_KRIEK] = KK_ID,
 		[BOARD_HIHOPE_RZG2M] = HM_ID,
-		[BOARD_HIHOPE_RZG2M] = HN_ID,
+		[BOARD_HIHOPE_RZG2N] = HN_ID,
 		[BOARD_HIHOPE_RZG2H] = HH_ID,
 		[BOARD_EK874] = EK_ID,
 	};
 	static uint8_t board_id = BOARD_ID_UNKNOWN;
+#if (RZG_HIHOPE_RZG2H)
+	uint32_t boardInfo;
+#else /* RZG_HIHOPE_RZG2H */
+	uint32_t read_rev;
+#endif /* RZG_HIHOPE_RZG2H */
+#if (RZG_HIHOPE_RZG2N) | (RZG_HIHOPE_RZG2M)
+	uint32_t reg, boardInfo;
+#endif /* RZG_HIHOPE_RZG2N | RZG_HIHOPE_RZG2M */
 
 	if (board_id != BOARD_ID_UNKNOWN)
 		goto get_type;
@@ -107,7 +122,36 @@ get_type:
 		return ret;
 	}
 
-	*rev = board_tbl[*type][(uint8_t) (board_id & BOARD_REV_MASK)];
-
+#if (RZG_HIHOPE_RZG2M)
+	reg = mmio_read_32(RCAR_PRR);
+	if (RCAR_M3_CUT_VER11 == (reg & PRR_CUT_MASK))
+	{
+		read_rev = (uint8_t)(board_id & BOARD_REV_MASK);
+		*rev = board_tbl[*type][read_rev];
+	}
+	else
+	{
+		boardInfo = mmio_read_32(GPIO_INDT5) & (GP5_19_BIT |GP5_21_BIT);
+		*rev = (((boardInfo & GP5_19_BIT) >> 14) | ((boardInfo & GP5_21_BIT) >> 17)) + 0x30;
+	}
+#elif (RZG_HIHOPE_RZG2N)
+	reg = mmio_read_32(GPIO_INDT5);
+	if (reg & GP5_25_BIT)
+	{
+		read_rev = (uint8_t)(board_id & BOARD_REV_MASK);
+		*rev = board_tbl[*type][read_rev];
+	}
+	else
+	{
+		boardInfo = reg & (GP5_19_BIT |GP5_21_BIT);
+		*rev = (((boardInfo & GP5_19_BIT) >> 14) | ((boardInfo & GP5_21_BIT) >> 17)) + 0x30;
+	}
+#elif (RZG_HIHOPE_RZG2H)
+	boardInfo = mmio_read_32(GPIO_INDT5) & (GP5_19_BIT |GP5_21_BIT);
+	*rev = (((boardInfo & GP5_19_BIT) >> 14) | ((boardInfo & GP5_21_BIT) >> 17)) + 0x30;
+#else
+	read_rev = (uint8_t)(board_id & BOARD_REV_MASK);
+	*rev = board_tbl[*type][read_rev];
+#endif
 	return ret;
 }

@@ -834,8 +834,7 @@ void pfc_init_m3n(void)
 		      | GPSR2_IRQ2
 		      | GPSR2_IRQ1
 		      | GPSR2_IRQ0);
-	pfc_reg_write(PFC_GPSR3, GPSR3_SD0_WP
-		      | GPSR3_SD0_CD
+	pfc_reg_write(PFC_GPSR3, GPSR3_SD0_CD
 		      | GPSR3_SD1_DAT3
 		      | GPSR3_SD1_DAT2
 		      | GPSR3_SD1_DAT1

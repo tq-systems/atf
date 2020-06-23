@@ -2021,17 +2021,30 @@ static uint32_t opencheck_SSI_WS6(void)
 
 #endif
 
+#if (RZG_HIHOPE_RZG2M) // RZG_HIHOPE_RZG2M
+#define		LPDDR4_2RANK	(0x01 << 25)
+#endif
+
 static uint32_t _board_judge(void)
 {
 	uint32_t brd;
 #if (RZG_HIHOPE_RZG2M) // RZG_HIHOPE_RZG2M
 	uint32_t reg;
+	uint32_t boardInfo;
 
 	reg = mmio_read_32(PRR);
 
 	if (RCAR_M3_CUT_VER11 != (reg & PRR_CUT_MASK))
 	{
-		return (22);
+		boardInfo = mmio_read_32(GPIO_INDT5);
+		if (boardInfo & LPDDR4_2RANK)
+		{
+			return (23);
+		}
+		else
+		{
+			return (22);
+		}
 	}
 	else
 	{
