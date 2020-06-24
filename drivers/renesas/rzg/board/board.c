@@ -150,8 +150,12 @@ get_type:
 	boardInfo = mmio_read_32(GPIO_INDT5) & (GP5_19_BIT |GP5_21_BIT);
 	*rev = (((boardInfo & GP5_19_BIT) >> 14) | ((boardInfo & GP5_21_BIT) >> 17)) + 0x30;
 #else
-	read_rev = (uint8_t)(board_id & BOARD_REV_MASK);
-	*rev = board_tbl[*type][read_rev];
+	if (mmio_read_32(RCAR_PRR) & RCAR_MINOR_MASK)
+		*rev = 0x30U;
+	else {
+		read_rev = (uint8_t)(board_id & BOARD_REV_MASK);
+		*rev = board_tbl[*type][read_rev];
+	}
 #endif
 	return ret;
 }
