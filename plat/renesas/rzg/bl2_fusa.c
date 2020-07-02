@@ -60,19 +60,19 @@ struct rzg2_ecc_conf {
 
 #if (RZG_DRAM_ECC == 1 && RZG_EK874 == 1)
 static const struct rzg2_ecc_conf rzg2_ek874_conf[] = {
-#if (RZG_DRAM_ECC_FULL == 1)
+#if (RZG_DRAM_ECC_FULL == 2) // ECC Full mode single channel
 	{ FUSAAREACR(1, 7, 0x408000000),    ECCAREACR(0, 0x448000000)   }, /* 128+128 MB */
 	{ FUSAAREACR(1, 8, 0x410000000),    ECCAREACR(0, 0x450000000)   }, /* 256+256 MB */
 	{ FUSAAREACR(1, 8, 0x420000000),    ECCAREACR(0, 0x460000000)   }, /* 256+256 MB */
 	{ FUSAAREACR(1, 8, 0x430000000),    ECCAREACR(0, 0x470000000)   }, /* 256+256 MB */
 	{ FUSAAREACR(1, 6, 0x440000000),    ECCAREACR(0, 0x444000000)   }, /* 64+64 MB */
-#else //(RZG_DRAM_ECC_FULL == 1)
+#else //(RZG_DRAM_ECC_FULL == 2)
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
-#endif //(RZG_DRAM_ECC_FULL == 1)
+#endif //(RZG_DRAM_ECC_FULL == 2)
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
 	{ FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
@@ -89,21 +89,21 @@ static const struct rzg2_ecc_conf rzg2_ek874_conf[] = {
 
 #if (RZG_DRAM_ECC == 1 && RZG_HIHOPE_RZG2N == 1)
 static const struct rzg2_ecc_conf rzg2_hihope_rzg2n_conf[] = {
-#if (RZG_DRAM_ECC_FULL == 1)
+#if (RZG_DRAM_ECC_FULL == 2) // ECC Full mode single channel
         { FUSAAREACR(1, 7, 0x408000000),    ECCAREACR(0, 0x488000000)   }, /* 128+128 MB */
         { FUSAAREACR(1, 8, 0x410000000),    ECCAREACR(0, 0x490000000)   }, /* 256+256 MB */
         { FUSAAREACR(1, 9, 0x420000000),    ECCAREACR(0, 0x4A0000000)   }, /* 512+512 MB */
         { FUSAAREACR(1, 9, 0x440000000),    ECCAREACR(0, 0x4C0000000)   }, /* 512+512 MB */
         { FUSAAREACR(1, 9, 0x460000000),    ECCAREACR(0, 0x4E0000000)   }, /* 512+512 MB */
         { FUSAAREACR(1, 6, 0x480000000),    ECCAREACR(0, 0x484000000)   }, /* 64+64 MB */
-#else //(RZG_DRAM_ECC_FULL == 1)
+#else //(RZG_DRAM_ECC_FULL == 2)
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
-#endif //(RZG_DRAM_ECC_FULL == 1)
+#endif //(RZG_DRAM_ECC_FULL == 2)
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
         { FUSAAREACR(0, 0, 0),    ECCAREACR(0, 0)   },
@@ -118,7 +118,7 @@ static const struct rzg2_ecc_conf rzg2_hihope_rzg2n_conf[] = {
 #endif
 
 #if (RZG_HIHOPE_RZG2M == 1)
-#if (RZG_DRAM_ECC_FULL == 1)
+#if (RZG_DRAM_ECC_FULL == 1) // ECC Full mode dual channel
 static const uint32_t fusacr = EFUSASEL(0xF0) | DFUSASEL(0xFE)| SFUSASEL(0);
 static const uint32_t adsplcr0 = ADRMODE(0) | SPLITSEL(1) | AREA(0x1C) | SWP(0);
 static const uint32_t adsplcr1 = SPLITSEL(1) | AREA(0x1C) | SWP(0);
@@ -133,7 +133,7 @@ static const uint32_t adsplcr3 = 0;
 #endif //(RZG_DRAM_ECC_FULL == 1)
 #endif //(RZG_HIHOPE_RZG2M == 1)
 
-#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL != 0))
 /* Write zero-valued octa-byte words */
 static void bzero64(uintptr_t start, uint64_t size)
 {
@@ -144,7 +144,7 @@ static void bzero64(uintptr_t start, uint64_t size)
 	while (ptr < end)
 		*ptr++ = 0;
 }
-#endif //((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#endif //((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL != 0))
 
 /* Setup DRAM ECC configuration registers */
 #if (RZG_DRAM_ECC == 1 && RZG_EK874 == 1)
@@ -157,7 +157,7 @@ static void bl2_enable_ecc_ek874(void)
 	conf = rzg2_ek874_conf;
 	nb_of_conf = ARRAY_SIZE(rzg2_ek874_conf);
 
-#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 2))
 	/* Clear DRAM ECC Area (for check) */
 	NOTICE("BL2: Clearing ECC area from %lx\n", EK874_ECCAREA);
 	bzero64(EK874_ECCAREA, (uint64_t)EK874_ECCAREA_TOTAL);
@@ -173,7 +173,7 @@ static void bl2_enable_ecc_ek874(void)
 
 	}
 
-#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 2))
 	/* Clear DRAM data area to initialize ECC area */
 	NOTICE("BL2: Clearing DATA area from %lx\n", EK874_FUSAAREA);
 	bzero64(EK874_FUSAAREA, (uint64_t)EK874_FUSAAREA_TOTAL);
@@ -192,7 +192,7 @@ static void bl2_enable_ecc_hihope_rzg2n(void)
 	conf = rzg2_hihope_rzg2n_conf;
 	nb_of_conf = ARRAY_SIZE(rzg2_hihope_rzg2n_conf);
 
-#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 2))
 	/* Clear DRAM ECC Area (for check) */
 	NOTICE("BL2: Clearing ECC area from %lx\n", HHOPE_G2N_ECCAREA);
 	bzero64(HHOPE_G2N_ECCAREA, (uint64_t)HHOPE_G2N_ECCAREA_TOTAL);
@@ -207,11 +207,11 @@ static void bl2_enable_ecc_hihope_rzg2n(void)
 					1 << ((conf->fusaareacr >> 24) & 0xf));
 	}
 
-#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#if ((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 2))
 	/* Clear DRAM ECC Area (for check) */
 	NOTICE("BL2: Clearing DATA area from %lx\n", HHOPE_G2N_FUSAAREA);
 	bzero64(HHOPE_G2N_FUSAAREA, (uint64_t)HHOPE_G2N_FUSAAREA_TOTAL);
-#endif //((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 1))
+#endif //((FUSA_DRAM_CLEAR == 1) && (RZG_DRAM_ECC_FULL == 2))
 
 }
 #endif
@@ -264,4 +264,3 @@ void bl2_ecc_init(void)
 
 #endif /* RZG_DRAM_ECC == 1 */
 }
-

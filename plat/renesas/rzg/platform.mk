@@ -252,6 +252,9 @@ endif
 $(eval $(call add_define,RZG_DRAM_ECC))
 
 # Process RZG_DRAM_ECC_FULL flag
+# 0 : ECC Full mode will not be applied
+# 1 : ECC Full mode dual channel will be applied
+# 2 : ECC Full mode single channel will be applied
 ifndef RZG_DRAM_ECC_FULL
 RZG_DRAM_ECC_FULL :=0
 endif
