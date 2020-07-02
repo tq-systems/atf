@@ -15,6 +15,11 @@
 #define	NUM_DAREA		16
 #define	FUSACR			0xE6784020	/* FuSa Ctrl */
 
+#define	ADSPLCR0		0xE6784008	/* Address Split Control 0 */
+#define	ADSPLCR1		0xE678400C	/* Address Split Control 1 */
+#define	ADSPLCR2		0xE6784010	/* Address Split Control 2 */
+#define	ADSPLCR3		0xE6784014	/* Address Split Control 3 */
+
 /* As the saddr, specify high-memory address (> 4 GB) */
 #define	FUSAAREACR(en, size, saddr)	\
 	(((uint32_t)en << 31) | ((uint32_t)size << 24) | (uint32_t)(((uintptr_t)saddr) >> 12))
@@ -24,6 +29,11 @@
 #define	EFUSASEL(x)	((uint32_t)x & 0xff) << 24	/*Setting for Extra Split mode*/
 #define	DFUSASEL(x)	((uint32_t)x & 0xff) << 16	/*Setting for DRAM*/
 #define	SFUSASEL(x)	((uint32_t)x & 0x3f)		/*Setting for SRAM*/
+
+#define	SPLITSEL(x)	((uint32_t)x & 0xff) << 16	/*Setting for Split mode*/
+#define	AREA(x)		((uint32_t)x & 0x1f) << 8	/*address bit devides DBSC into 8 areas*/
+#define	SWP(x)		((uint32_t)x & 0x1f)		/*address bit to interleave DBSCs in split mode*/
+#define	ADRMODE(x)	((uint32_t)x & 0x1) << 31	/*Select address mapping mode*/
 
 #ifndef ARRAY_SIZE
 #define	ARRAY_SIZE(a)		(sizeof(a) / sizeof(a[0]))
@@ -93,6 +103,22 @@ static const struct rzg2_ecc_conf rzg2_hihope_rzg2n_conf[] = {
 };
 #endif
 
+#if (RZG_HIHOPE_RZG2M == 1)
+#if (RZG_DRAM_ECC_FULL == 1)
+static const uint32_t fusacr = EFUSASEL(0xF0) | DFUSASEL(0xFE)| SFUSASEL(0);
+static const uint32_t adsplcr0 = ADRMODE(0) | SPLITSEL(1) | AREA(0x1C) | SWP(0);
+static const uint32_t adsplcr1 = SPLITSEL(1) | AREA(0x1C) | SWP(0);
+static const uint32_t adsplcr2 = 0;
+static const uint32_t adsplcr3 = SPLITSEL(0) | AREA(0x19) | SWP(0);
+#else //(RZG_DRAM_ECC_FULL == 1)
+static const uint32_t fusacr = 0;
+static const uint32_t adsplcr0 = 0;
+static const uint32_t adsplcr1 = 0;
+static const uint32_t adsplcr2 = 0;
+static const uint32_t adsplcr3 = 0;
+#endif //(RZG_DRAM_ECC_FULL == 1)
+#endif //(RZG_HIHOPE_RZG2M == 1)
+
 /* Setup DRAM ECC configuration registers */
 #if (RZG_DRAM_ECC == 1 && RZG_EK874 == 1)
 static void bl2_enable_ecc_ek874(void)
@@ -140,16 +166,18 @@ static void bl2_enable_ecc_hihope_rzg2n(void)
 #if (RZG_DRAM_ECC == 1 && RZG_HIHOPE_RZG2M == 1)
 static void bl2_enable_ecc_hihope_rzg2m(void)
 {
-	mmio_write_32((uintptr_t)((uint32_t *)FUSACR), EFUSASEL(0)
-#if (RZG_DRAM_ECC_FULL == 1)
-						     | DFUSASEL(0xff)
-#else //(RZG_DRAM_ECC_FULL == 1)
-						     | DFUSASEL(0x00)
-#endif //(RZG_DRAM_ECC_FULL == 1)
-						     | SFUSASEL(0));
-#if (RZG_DRAM_ECC_FULL == 1)
-	NOTICE("BL2: DRAM FULL ECC Configured (DFUSASEL=0x%x)\n",DFUSASEL(0xff));
-#endif //(RZG_DRAM_ECC_FULL == 1)
+	mmio_write_32((uintptr_t)((uint32_t *)ADSPLCR0), adsplcr0);
+	mmio_write_32((uintptr_t)((uint32_t *)ADSPLCR1), adsplcr1);
+	mmio_write_32((uintptr_t)((uint32_t *)ADSPLCR2), adsplcr2);
+	mmio_write_32((uintptr_t)((uint32_t *)ADSPLCR3), adsplcr3);
+	mmio_write_32((uintptr_t)((uint32_t *)FUSACR),	fusacr);
+
+	NOTICE("BL2: DRAM ECC Configured:\n");
+	NOTICE("     ADSPLCR0=0x%x\n", adsplcr0);
+	NOTICE("     ADSPLCR1=0x%x\n", adsplcr1);
+	NOTICE("     ADSPLCR2=0x%x\n", adsplcr2);
+	NOTICE("     ADSPLCR3=0x%x\n", adsplcr3);
+	NOTICE("     FUSACR=0x%x\n", fusacr);
 }
 #endif
 
