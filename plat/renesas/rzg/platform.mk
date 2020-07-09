@@ -325,7 +325,13 @@ ERRATA_A53_835769  := 1
 ifdef ERRATA_A53_843419
 ERRATA_A53_843419  := 1
 else
-TF_LDFLAGS_aarch64	+= --fix-cortex-a53-843419
+OLD_BINUTILS := $(shell ${LD} --fix-cortex-a53-843419 2>&1 >/dev/null | grep 'unrecognized option' >/dev/null; echo $$?)
+ifeq ($(OLD_BINUTILS),0)
+# Fix ld error 'unrecognized option' with old binutils
+TF_LDFLAGS_aarch64    += --fix-cortex-a53
+else
+TF_LDFLAGS_aarch64    += --fix-cortex-a53-843419
+endif
 endif
 ERRATA_A53_855873  := 1
 
