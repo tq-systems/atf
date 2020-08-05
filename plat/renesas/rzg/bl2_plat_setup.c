@@ -61,7 +61,7 @@ extern void bl2_enter_bl31(const struct entry_point_info *bl_ep_info);
 extern void bl2_system_cpg_init(void);
 extern void bl2_secure_setting(void);
 extern void bl2_cpg_init(void);
-extern void bl2_ecc_init(void);
+extern void bl2_ecc_init(uint32_t major, uint32_t minor);
 extern void rcar_io_emmc_setup(void);
 extern void rcar_io_setup(void);
 extern void rcar_swdt_release(void);
@@ -777,6 +777,9 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 		break;
 	}
 
+	major = 0;
+	minor = 0;
+
 	if ((PRR_PRODUCT_M3 == product) &&
 	    (PRR_PRODUCT_20 == (reg & RCAR_MAJOR_MASK))) {
 		if (RCAR_M3_CUT_VER11 == (reg & PRR_CUT_MASK)) {
@@ -913,7 +916,7 @@ lcm_state:
 		rcar_qos_init();
 	}
 
-	bl2_ecc_init();
+	bl2_ecc_init(major, minor);
 
 	/* Set up FDT */
 	ret = fdt_create_empty_tree(fdt, sizeof(fdt_blob));
