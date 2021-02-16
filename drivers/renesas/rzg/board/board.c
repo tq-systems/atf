@@ -19,11 +19,23 @@
 #if (RCAR_LSI == RCAR_E3)
 #define BOARD_DEFAULT		(BOARD_EK874 << BOARD_CODE_SHIFT)
 #elif (RCAR_LSI == RCAR_M3N)
+#if (RZG_TQMARZG2N_B)
+#define BOARD_DEFAULT		(BOARD_TQMARZG2N_B << BOARD_CODE_SHIFT)
+#else
 #define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2N << BOARD_CODE_SHIFT)
+#endif
 #elif (RCAR_LSI == RCAR_H3N)
+#if (RZG_TQMARZG2H_C)
+#define BOARD_DEFAULT		(BOARD_TQMARZG2H_C << BOARD_CODE_SHIFT)
+#else
 #define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2H << BOARD_CODE_SHIFT)
+#endif
+#else
+#if (RZG_TQMARZG2M_E)
+#define BOARD_DEFAULT		(BOARD_TQMARZG2M_E << BOARD_CODE_SHIFT)
 #else
 #define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2M << BOARD_CODE_SHIFT)
+#endif
 #endif
 #endif
 
@@ -50,6 +62,9 @@
 #define HN_ID	{ 0x20U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define HH_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define EK_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define NB_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define HC_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define ME_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 
 const char *g_board_tbl[] = {
 	[BOARD_STARTER_KIT_PRE] = "Starter Kit Premier",
@@ -65,6 +80,9 @@ const char *g_board_tbl[] = {
 	[BOARD_HIHOPE_RZG2N]	= "HiHope RZ/G2N",
 	[BOARD_HIHOPE_RZG2H]	= "HiHope RZ/G2H",
 	[BOARD_EK874]			= "EK874 RZ/G2E",
+	[BOARD_TQMARZG2N_B]		= "TQMaRZG2N (2GB)",
+	[BOARD_TQMARZG2M_E]		= "TQMaRZG2M (8GB)",
+	[BOARD_TQMARZG2H_C]		= "TQMaRZG2H (4GB)",
 	[BOARD_UNKNOWN] = "unknown"
 };
 
@@ -85,6 +103,9 @@ int32_t rcar_get_board_type(uint32_t *type, uint32_t *rev)
 		[BOARD_HIHOPE_RZG2N] = HN_ID,
 		[BOARD_HIHOPE_RZG2H] = HH_ID,
 		[BOARD_EK874] = EK_ID,
+		[BOARD_TQMARZG2N_B]	= NB_ID,
+		[BOARD_TQMARZG2M_E]	= ME_ID,
+		[BOARD_TQMARZG2H_C]	= HC_ID,
 	};
 	static uint8_t board_id = BOARD_ID_UNKNOWN;
 #if (RZG_HIHOPE_RZG2H)

@@ -482,6 +482,12 @@ static void bl2_populate_compatible_string(void *dt)
 		ret = fdt_setprop_string(dt, 0, "compatible",
 					 "renesas,ek874");
 		break;
+	case BOARD_TQMARZG2N_B:
+	case BOARD_TQMARZG2M_E:
+	case BOARD_TQMARZG2H_C:
+		ret = fdt_setprop_string(dt, 0, "compatible",
+					 "tq,tqmarzg2");
+		break;
 	default:
 		NOTICE("BL2: Cannot set compatible string, board unsupported\n");
 		panic();
@@ -608,7 +614,11 @@ static void bl2_advertise_dram_size(uint32_t product)
 
 	switch (product) {
 	case PRR_PRODUCT_H3:
-#if (RCAR_DRAM_LPDDR4_MEMCONF == 0)
+#if (RZG_TQMARZG2H_C)
+		/* 4GB(2GBx2 2ch split) */
+		dram_config[1] = 0x80000000ULL;
+		dram_config[3] = 0x80000000ULL;
+#elif (RCAR_DRAM_LPDDR4_MEMCONF == 0)
 		/* 4GB(1GBx4) */
 		dram_config[1] = 0x40000000ULL;
 		dram_config[3] = 0x40000000ULL;
@@ -630,7 +640,11 @@ static void bl2_advertise_dram_size(uint32_t product)
 		break;
 
 	case PRR_PRODUCT_M3:
-#if (RCAR_GEN3_ULCB == 1)
+#if (RZG_TQMARZG2M_E)
+		/* 8GB(4GBx2 2ch split) */
+		dram_config[1] = 0x100000000ULL;
+		dram_config[5] = 0x100000000ULL;
+#elif (RCAR_GEN3_ULCB == 1)
 		/* 2GB(1GBx2 2ch split) */
 		dram_config[1] = 0x40000000ULL;
 		dram_config[5] = 0x40000000ULL;
@@ -642,8 +656,13 @@ static void bl2_advertise_dram_size(uint32_t product)
 		break;
 
 	case PRR_PRODUCT_M3N:
+#if (RZG_TQMARZG2M_E)
 		/* 2GB(1GBx2) */
 		dram_config[1] = 0x80000000ULL;
+#else
+		/* 2GB(1GBx2) */
+		dram_config[1] = 0x80000000ULL;
+#endif
 		break;
 
 	case PRR_PRODUCT_V3M:
@@ -813,6 +832,9 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 	case BOARD_HIHOPE_RZG2M:
 	case BOARD_HIHOPE_RZG2N:
 	case BOARD_EK874:
+	case BOARD_TQMARZG2N_B:
+	case BOARD_TQMARZG2M_E:
+	case BOARD_TQMARZG2H_C:
 		break;
 	default:
 		type = BOARD_UNKNOWN;

@@ -320,6 +320,24 @@ RZG_HIHOPE_RZG2H := 0
 endif
 $(eval $(call add_define,RZG_HIHOPE_RZG2H))
 
+#Process RZG_TQMARZG2N_B flag
+ifndef RZG_TQMARZG2N_B
+RZG_TQMARZG2N_B := 0
+endif
+$(eval $(call add_define,RZG_TQMARZG2N_B))
+
+#Process RZG_TQMARZG2M_E flag
+ifndef RZG_TQMARZG2M_E
+RZG_TQMARZG2M_E := 0
+endif
+$(eval $(call add_define,RZG_TQMARZG2M_E))
+
+#Process RZG_TQMARZG2H_C flag
+ifndef RZG_TQMARZG2H_C
+RZG_TQMARZG2H_C := 0
+endif
+$(eval $(call add_define,RZG_TQMARZG2H_C))
+
 # Enable workarounds for selected Cortex-A53 erratas.
 ERRATA_A53_835769  := 1
 ifdef ERRATA_A53_843419
