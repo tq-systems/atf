@@ -53,6 +53,27 @@ static const struct aipstz_cfg aipstz[] = {
 	{0},
 };
 
+static const struct imx_rdc_cfg rdc[] = {
+	/* Master domain assignment */
+	RDC_MDAn(RDC_MDA_M4, DID1),
+
+	/* peripherals domain permission */
+#if (IMX_BOOT_UART_BASE) == (IMX_UART1_BASE)
+	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W),
+#elif (IMX_BOOT_UART_BASE) == (IMX_UART2_BASE)
+	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
+#elif (IMX_BOOT_UART_BASE) == (IMX_UART3_BASE)
+	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W),
+#elif (IMX_BOOT_UART_BASE) == (IMX_UART4_BASE)
+	RDC_PDAPn(RDC_PDAP_UART4, D0R | D0W),
+#endif
+
+	/* memory region */
+
+	/* Sentinel */
+	{0},
+};
+
 static entry_point_info_t bl32_image_ep_info;
 static entry_point_info_t bl33_image_ep_info;
 
@@ -143,6 +164,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	}
 
 	imx_aipstz_init(aipstz);
+
+	imx_rdc_init(rdc);
 
 	imx8m_caam_init();
 
