@@ -60,7 +60,15 @@ static const struct imx_rdc_cfg rdc[] = {
 	RDC_MDAn(RDC_MDA_M7, DID1),
 
 	/* peripherals domain permission */
+#if (IMX_BOOT_UART_BASE) == (IMX_UART1_BASE)
+	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W),
+#elif (IMX_BOOT_UART_BASE) == (IMX_UART2_BASE)
 	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
+#elif (IMX_BOOT_UART_BASE) == (IMX_UART3_BASE)
+	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W),
+#elif (IMX_BOOT_UART_BASE) == (IMX_UART4_BASE)
+	RDC_PDAPn(RDC_PDAP_UART4, D0R | D0W),
+#endif
 	RDC_PDAPn(RDC_PDAP_WDOG1, D0R | D0W),
 
 	/* memory region */
