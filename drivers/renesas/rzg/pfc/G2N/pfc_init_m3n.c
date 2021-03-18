@@ -570,10 +570,17 @@
 #define MOD_SEL2_VIN4_A		((uint32_t)0U << 0U)
 #define MOD_SEL2_VIN4_B		((uint32_t)1U << 0U)
 
+#define	SEC_CONF			(0xEE2000B8)
+
 static void pfc_reg_write(uint32_t addr, uint32_t data)
 {
 	mmio_write_32(PFC_PMMR, ~data);
 	mmio_write_32((uintptr_t)addr, data);
+	/*
+	 * Initialize Secure Configuration Register to access QSPI
+	 * when eMMC Boot is performed.
+	 */
+	mmio_write_32(SEC_CONF, 0x0155);
 }
 
 void pfc_init_m3n(void)
