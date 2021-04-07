@@ -970,7 +970,6 @@ void pfc_init_m3(void)
 	pfc_reg_write(PFC_GPSR6, GPSR6_AUDIO_CLKB_B
 		      | GPSR6_AUDIO_CLKA_A
 		      | GPSR6_SSI_WS6
-		      | GPSR6_SSI_SCK6
 		      | GPSR6_SSI_SDATA4
 		      | GPSR6_SSI_WS4
 		      | GPSR6_SSI_SCK4
@@ -1237,22 +1236,22 @@ void pfc_init_m3(void)
 	pfc_reg_write(PFC_DRVCTRL24, reg);
 
 	/* initialize LSI pin pull-up/down control */
-	pfc_reg_write(PFC_PUD0,0x00005FBFU);
-	pfc_reg_write(PFC_PUD1,0x00300EFEU);
-	pfc_reg_write(PFC_PUD2,0x330001E6U);
-	pfc_reg_write(PFC_PUD3,0x000002E0U);
-	pfc_reg_write(PFC_PUD4,0xFFFFFF00U);
-	pfc_reg_write(PFC_PUD5,0x7F5FFF87U);
-	pfc_reg_write(PFC_PUD6,0x00000055U);
+	pfc_reg_write(PFC_PUD0,0x00000000U);
+	pfc_reg_write(PFC_PUD1,0x00000000U);
+	pfc_reg_write(PFC_PUD2,0x00000000U);
+	pfc_reg_write(PFC_PUD3,0x00000000U);
+	pfc_reg_write(PFC_PUD4,0x00000000U);
+	pfc_reg_write(PFC_PUD5,0x00000000U);
+	pfc_reg_write(PFC_PUD6,0x00000000U);
 
 	/* initialize LSI pin pull-enable register */
-	pfc_reg_write(PFC_PUEN0,0x00000FFFU);
-	pfc_reg_write(PFC_PUEN1,0x00100234U);
-	pfc_reg_write(PFC_PUEN2,0x000004C4U);
-	pfc_reg_write(PFC_PUEN3,0x00000200U);
-	pfc_reg_write(PFC_PUEN4,0x3E000000U);
-	pfc_reg_write(PFC_PUEN5,0x1F000805U);
-	pfc_reg_write(PFC_PUEN6,0x00000006U);
+	pfc_reg_write(PFC_PUEN0,0x00000000U);
+	pfc_reg_write(PFC_PUEN1,0x00000000U);
+	pfc_reg_write(PFC_PUEN2,0x00000000U);
+	pfc_reg_write(PFC_PUEN3,0x00000000U);
+	pfc_reg_write(PFC_PUEN4,0x00000000U);
+	pfc_reg_write(PFC_PUEN5,0x00000000U);
+	pfc_reg_write(PFC_PUEN6,0x00000000U);
 
 	/* initialize positive/negative logic select */
 	mmio_write_32(GPIO_POSNEG0, 0x00000000U);
@@ -1275,27 +1274,27 @@ void pfc_init_m3(void)
 	mmio_write_32(GPIO_IOINTSEL7, 0x00000000U);
 
 	/* initialize general output register */
-	mmio_write_32(GPIO_OUTDT0, 0x00000001U);
+	mmio_write_32(GPIO_OUTDT0, 0x00000000U);
 	mmio_write_32(GPIO_OUTDT1, 0x00000000U);
-	mmio_write_32(GPIO_OUTDT2, 0x00000400U);
+	mmio_write_32(GPIO_OUTDT2, 0x00000000U);
 	mmio_write_32(GPIO_OUTDT3, 0x00000000U);
 	mmio_write_32(GPIO_OUTDT4, 0x00000000U);
 	mmio_write_32(GPIO_OUTDT5, 0x00000000U);
-	mmio_write_32(GPIO_OUTDT6, 0x00003800U);
-	mmio_write_32(GPIO_OUTDT7, 0x00000003U);
+	mmio_write_32(GPIO_OUTDT6, 0x00084800U);
+	mmio_write_32(GPIO_OUTDT7, 0x00000000U);
 
 	/* initialize general input/output switching */
-	mmio_write_32(GPIO_INOUTSEL0, 0x00000001U);
-	mmio_write_32(GPIO_INOUTSEL1, 0x00100B00U);
-	mmio_write_32(GPIO_INOUTSEL2, 0x00000418U);
-	mmio_write_32(GPIO_INOUTSEL3, 0x00002000U);
-	mmio_write_32(GPIO_INOUTSEL4, 0x00000040U);
+	mmio_write_32(GPIO_INOUTSEL0, 0x00000000U);
+	mmio_write_32(GPIO_INOUTSEL1, 0x00000000U);
+	mmio_write_32(GPIO_INOUTSEL2, 0x00000000U);
+	mmio_write_32(GPIO_INOUTSEL3, 0x00000000U);
+	mmio_write_32(GPIO_INOUTSEL4, 0x00000000U);
 #if (RCAR_GEN3_ULCB == 1)
-	mmio_write_32(GPIO_INOUTSEL5, 0x00000008U);
+	mmio_write_32(GPIO_INOUTSEL5, 0x00000000U);
 #else
-	mmio_write_32(GPIO_INOUTSEL5, 0x00000208U);
+	mmio_write_32(GPIO_INOUTSEL5, 0x00000000U);
 #endif
-	mmio_write_32(GPIO_INOUTSEL6, 0x00013F00U);
-	mmio_write_32(GPIO_INOUTSEL7, 0x00000003U);
+	mmio_write_32(GPIO_INOUTSEL6, 0x00084800U);
+	mmio_write_32(GPIO_INOUTSEL7, 0x00000000U);
 
 }
