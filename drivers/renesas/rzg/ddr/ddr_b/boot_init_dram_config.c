@@ -1853,6 +1853,7 @@ static const struct _boardcnf boardcnfs[BOARDNUM] = {
 },
 
 /* boardcnf[27] TQMaRZG2N 8Gbit/1Rank/2ch --> 16 Gbit total per Chip --> 16 Gbit total on */
+/* boardcnf[27] TQMaRZG2M 8Gbit/1Rank/2ch --> 16 Gbit total per Chip --> 16 Gbit total on */
 {
 	0x01,
 	0x01,
@@ -2035,7 +2036,7 @@ void boardcnf_get_brd_clk(uint32_t brd, uint32_t *clk, uint32_t *div)
 {
 	uint32_t md;
 
-#if (RZG_TQMARZG2N_B | RZG_TQMARZG2M_E | RZG_TQMARZG2H_C)
+#if (RZG_TQMARZG2N_B | RZG_TQMARZG2M_E | RZG_TQMARZG2H_C | RZG_TQMARZG2M_AA)
 	*clk = 75;
 	*div = 3;
 	return;
@@ -2258,6 +2259,11 @@ static uint32_t _board_judge(void)
 #if (RZG_TQMARZG2H_C)
 	{
 		return (29);
+	}
+#endif
+#if (RZG_TQMARZG2M_AA)
+	{
+		return (27);	// This board uses the same config as RZG_TQMARZG2N_B!
 	}
 #endif
 

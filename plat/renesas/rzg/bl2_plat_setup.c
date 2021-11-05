@@ -484,6 +484,7 @@ static void bl2_populate_compatible_string(void *dt)
 		break;
 	case BOARD_TQMARZG2N_B:
 	case BOARD_TQMARZG2M_E:
+	case BOARD_TQMARZG2M_AA:
 	case BOARD_TQMARZG2H_C:
 		ret = fdt_setprop_string(dt, 0, "compatible",
 					 "tq,tqmarzg2");
@@ -644,6 +645,9 @@ static void bl2_advertise_dram_size(uint32_t product)
 		/* 8GB(4GBx2 2ch split) */
 		dram_config[1] = 0x100000000ULL;
 		dram_config[5] = 0x100000000ULL;
+#elif (RZG_TQMARZG2M_AA)
+		/* 2GB(1GBx2) */
+		dram_config[1] = 0x80000000ULL;
 #elif (RCAR_GEN3_ULCB == 1)
 		/* 2GB(1GBx2 2ch split) */
 		dram_config[1] = 0x40000000ULL;
@@ -834,6 +838,7 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 	case BOARD_EK874:
 	case BOARD_TQMARZG2N_B:
 	case BOARD_TQMARZG2M_E:
+	case BOARD_TQMARZG2M_AA:
 	case BOARD_TQMARZG2H_C:
 		break;
 	default:

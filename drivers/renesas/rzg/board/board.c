@@ -33,6 +33,8 @@
 #else
 #if (RZG_TQMARZG2M_E)
 #define BOARD_DEFAULT		(BOARD_TQMARZG2M_E << BOARD_CODE_SHIFT)
+#elif (RZG_TQMARZG2M_AA)
+#define BOARD_DEFAULT		(BOARD_TQMARZG2M_AA << BOARD_CODE_SHIFT)
 #else
 #define BOARD_DEFAULT		(BOARD_HIHOPE_RZG2M << BOARD_CODE_SHIFT)
 #endif
@@ -65,6 +67,7 @@
 #define NB_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define HC_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 #define ME_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define MAA_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
 
 const char *g_board_tbl[] = {
 	[BOARD_STARTER_KIT_PRE] = "Starter Kit Premier",
@@ -82,6 +85,7 @@ const char *g_board_tbl[] = {
 	[BOARD_EK874]			= "EK874 RZ/G2E",
 	[BOARD_TQMARZG2N_B]		= "TQMaRZG2N (2GB)",
 	[BOARD_TQMARZG2M_E]		= "TQMaRZG2M (8GB)",
+	[BOARD_TQMARZG2M_AA]		= "TQMaRZG2M (2GB)",
 	[BOARD_TQMARZG2H_C]		= "TQMaRZG2H (4GB)",
 	[BOARD_UNKNOWN] = "unknown"
 };
@@ -105,6 +109,7 @@ int32_t rcar_get_board_type(uint32_t *type, uint32_t *rev)
 		[BOARD_EK874] = EK_ID,
 		[BOARD_TQMARZG2N_B]	= NB_ID,
 		[BOARD_TQMARZG2M_E]	= ME_ID,
+		[BOARD_TQMARZG2M_AA]	= MAA_ID,
 		[BOARD_TQMARZG2H_C]	= HC_ID,
 	};
 	static uint8_t board_id = BOARD_ID_UNKNOWN;

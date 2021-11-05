@@ -332,6 +332,12 @@ RZG_TQMARZG2M_E := 0
 endif
 $(eval $(call add_define,RZG_TQMARZG2M_E))
 
+#Process RZG_TQMARZG2M_AA flag
+ifndef RZG_TQMARZG2M_AA
+RZG_TQMARZG2M_AA := 0
+endif
+$(eval $(call add_define,RZG_TQMARZG2M_AA))
+
 #Process RZG_TQMARZG2H_C flag
 ifndef RZG_TQMARZG2H_C
 RZG_TQMARZG2H_C := 0
