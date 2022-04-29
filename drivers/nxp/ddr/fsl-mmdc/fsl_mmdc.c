@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <platform_def.h>
+
 #include <common/debug.h>
 #include "ddr_io.h"
 #include <drivers/delay_timer.h>
@@ -78,8 +80,13 @@ void mmdc_init(const struct fsl_mmdc_info *priv, uintptr_t nxp_ddr_addr)
 #error "Unsupported DDRC_NUM_CS"
 #endif
 
+#if defined(PLAT_ENABLE_ASR)
+#define MR2_VAL CMD_ADDR_LSB_MR_ADDR(0x48)
+#else
+#define MR2_VAL CMD_ADDR_LSB_MR_ADDR(0x8)
+#endif
 	/* 8a. dram init sequence: update MRs for ZQ, ODT, PRE, etc */
-	ddr_out32(&mmdc->mdscr, CMD_ADDR_LSB_MR_ADDR(8) |
+	ddr_out32(&mmdc->mdscr, MR2_VAL |
 				MDSCR_ENABLE_CON_REQ |
 				CMD_LOAD_MODE_REG |
 				CMD_BANK_ADDR_2);
