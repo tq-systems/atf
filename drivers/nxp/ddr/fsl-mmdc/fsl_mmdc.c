@@ -108,9 +108,12 @@ void mmdc_init(const struct fsl_mmdc_info *priv, uintptr_t nxp_ddr_addr)
 				MPZQHWCTRL_ZQ_HW_FORCE);
 
 	/* 9a. calibrations now, wr lvl */
-	ddr_out32(&mmdc->mdscr,  CMD_ADDR_LSB_MR_ADDR(0x84) | MDSCR_WL_EN |
+	ddr_out32(&mmdc->mdscr,  CMD_ADDR_LSB_MR_ADDR(0x84) |
 				MDSCR_ENABLE_CON_REQ |
 				CMD_LOAD_MODE_REG | CMD_BANK_ADDR_1);
+
+	ddr_out32(&mmdc->mdscr,  MDSCR_ENABLE_CON_REQ | MDSCR_WL_EN |
+				CMD_NORMAL);
 
 	set_wait_for_bits_clear(&mmdc->mpwlgcr, MPWLGCR_HW_WL_EN,
 				MPWLGCR_HW_WL_EN);
