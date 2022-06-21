@@ -7,7 +7,7 @@
 
 # Board-specific build parameters
 BOOT_MODE	?=	flexspi_nor
-BOARD		:=	tqmls1028a
+BOARD		:=	tqmls1028a_1gb
 POVDD_ENABLE	:=	no
 WARM_BOOT	:=	no
 
