@@ -10,14 +10,13 @@
 #endif
 
 #if (RZG_SOC == 1)
-#define BOARDNUM 4
+#define BOARDNUM 7
 #else
 
 #include <board.h>
 
 #define BOARDNUM 22
 #endif /* RZG_SOC == 1 */
-#define BOARD_JUDGE_AUTO
 
 #ifdef BOARD_JUDGE_AUTO
 static uint32_t _board_judge(void);
@@ -29,7 +28,23 @@ static uint32_t boardcnf_get_brd_type(void)
 #else
 static uint32_t boardcnf_get_brd_type(void)
 {
-	return 1;
+	uint32_t brd;
+
+	switch (prr_product) {
+		case PRR_PRODUCT_M3N:
+			brd = 4U;
+			break;
+		case PRR_PRODUCT_M3:
+			brd = 5U;
+			break;
+		case PRR_PRODUCT_H3:
+			brd = 6U;
+			break;
+		default:
+			brd = 99U;
+	}
+
+	return brd;
 }
 #endif
 
@@ -294,6 +309,159 @@ static const struct _boardcnf boardcnfs[BOARDNUM] = {
 			}
 		}
 	},
+/* boardcnf[4] TQMaRZG2N 8Gbit/1Rank/2ch --> 16 Gbit total per Chip --> 16 Gbit total on module = 2 GB */
+	{
+	 0x01,
+	 0x01,
+	 0x0300,
+	 0,
+	 0x0300,
+	 0x00a0,
+	{
+		{
+		 { 0x04, 0xff },
+		 0x00543210,
+		 0x3210,
+		 { 0x17602534, 0x23546701, 0x43257160, 0x10765243 },
+		 { 0x08, 0x08, 0x08, 0x08 },
+		 WDQLVL_PAT,
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 }
+		},
+	}
+	},
+/* boardcnf[5] TQMaRZG2M 8Gbit/1Rank/2ch --> 16 Gbit total per Chip --> 16 Gbit total on module = 2 GB */
+	{
+	 0x01,
+	 0x01,
+	 0x0300,
+	 0,
+	 0x0300,
+	 0x00a0,
+	{
+		{
+		 { 0x04, 0xff },
+		 0x00543210,
+		 0x3210,
+		 { 0x17602534, 0x23546701, 0x43257160, 0x10765243 },
+		 { 0x08, 0x08, 0x08, 0x08 },
+		 WDQLVL_PAT,
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 }
+		}
+	}
+	},
+/* boardcnf[6] TQMaRZG2H 8Gbit/1Rank/2ch --> 16 Gbit total per Chip --> 32 Gbit total on module = 4 GB */
+	{
+	 0x05,
+	 0x01,
+	 0x0300,
+	 0,
+	 0x0300,
+	 0x00a0,
+	{
+		{
+		 { 0x04, 0xff },
+		 0x00543210,
+		 0x3210,
+		 { 0x17602534, 0x23541067, 0x43257160, 0x10765243 },
+		 { 0x08, 0x08, 0x08, 0x08 },
+		 WDQLVL_PAT,
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 }
+		},
+		{
+		 { 0x04, 0xff },
+		 0x00543210,
+		 0x3210,
+		 { 0x17502643, 0x54236170, 0x34521607, 0x07615243 },
+		 { 0x08, 0x08, 0x08, 0x08 },
+		 WDQLVL_PAT,
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 }
+		},
+		{
+		 { 0x04, 0xff },
+		 0x00543210,
+		 0x3210,
+		 { 0x17502643, 0x54236170, 0x34521607, 0x07615243 },
+		 { 0x08, 0x08, 0x08, 0x08 },
+		 WDQLVL_PAT,
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 }
+		},
+		{ // Dummy
+		 { 0xff, 0xff },
+		 0,
+		 0,
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 WDQLVL_PAT,
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0 }
+		}
+	}
+}
 };
 #else
 static const struct _boardcnf boardcnfs[BOARDNUM] = {
@@ -1770,6 +1938,13 @@ static const struct _boardcnf boardcnfs[BOARDNUM] = {
 void boardcnf_get_brd_clk(uint32_t brd, uint32_t *clk, uint32_t *div)
 {
 	uint32_t md;
+
+/* Necessity of this part is not clear, leave it as it is for now */
+#if (RZG_TQMARZG2X)
+	*clk = 75;
+	*div = 3;
+	return;
+#endif
 
 	if ((prr_product == PRR_PRODUCT_H3) && (prr_cut == PRR_PRODUCT_10)) {
 		*clk = 50;
