@@ -453,6 +453,18 @@ static void bl2_populate_compatible_string(void *dt)
 		ret = fdt_setprop_string(dt, 0, "compatible",
 					 "si-linux,cat874");
 		break;
+	case BOARD_TQMARZG2N:
+	        ret = fdt_setprop_string(dt, 0, "compatible",
+                                         "tq,tqmarzg2n");
+                break;
+	case BOARD_TQMARZG2M:
+	        ret = fdt_setprop_string(dt, 0, "compatible",
+                                         "tq,tqmarzg2m");
+                break;
+	case BOARD_TQMARZG2H:
+	        ret = fdt_setprop_string(dt, 0, "compatible",
+                                         "tq,tqmarzg2h");
+                break;
 	default:
 		NOTICE("BL2: Cannot set compatible string, board unsupported\n");
 		panic();
@@ -782,6 +794,9 @@ void bl2_el3_early_platform_setup(u_register_t arg1, u_register_t arg2,
 	case BOARD_HIHOPE_RZ_G2H:
 	case BOARD_HIHOPE_RZ_G2N:
 	case BOARD_EK874_RZ_G2E:
+	case BOARD_TQMARZG2N:
+	case BOARD_TQMARZG2M:
+	case BOARD_TQMARZG2H:
 		break;
 	default:
 		type = BOARD_UNKNOWN;

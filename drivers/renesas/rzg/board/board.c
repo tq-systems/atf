@@ -34,10 +34,13 @@
 #define GP5_21_BIT	(0x01U << 21)
 #define GP5_25_BIT	(0x01U << 25)
 
-#define HM_ID	{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
-#define HH_ID	HM_ID
-#define HN_ID	{ 0x20U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
-#define EK_ID	HM_ID
+#define HM_ID		{ 0x10U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define HH_ID		HM_ID
+#define HN_ID		{ 0x20U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU }
+#define EK_ID		HM_ID
+#define TQMARZG2N_ID	HM_ID
+#define TQMARZG2H_ID	HM_ID
+#define TQMARZG2M_ID	HM_ID
 
 #if (RCAR_LSI == RZ_G2E)
 extern char ek874_board_rev;
@@ -48,8 +51,33 @@ const char *g_board_tbl[] = {
 	[BOARD_HIHOPE_RZ_G2H] = "HiHope RZ/G2H",
 	[BOARD_HIHOPE_RZ_G2N] = "HiHope RZ/G2N",
 	[BOARD_EK874_RZ_G2E] = "EK874 RZ/G2E",
+	[BOARD_TQMARZG2N] = "TQMaRZG2N (2GB)",
+	[BOARD_TQMARZG2M] = "TQMaRZG2M (2GB)",
+	[BOARD_TQMARZG2H] = "TQMaRZG2H (4GB)",
 	[BOARD_UNKNOWN] = "unknown"
 };
+
+uint32_t tqmarzg2x_get_board_type()
+{
+	uint32_t brd;
+	uint32_t prr_product = mmio_read_32(PRR) & PRR_PRODUCT_MASK;
+
+	switch (prr_product) {
+		case PRR_PRODUCT_M3N:
+			brd = BOARD_TQMARZG2N << BOARD_CODE_SHIFT;
+			break;
+		case PRR_PRODUCT_M3:
+			brd = BOARD_TQMARZG2M << BOARD_CODE_SHIFT;
+			break;
+		case PRR_PRODUCT_H3:
+			brd = BOARD_TQMARZG2H << BOARD_CODE_SHIFT;
+			break;
+		default:
+			brd = BOARD_ID_UNKNOWN;
+	}
+
+	return brd;
+}
 
 void rzg_get_board_type(uint32_t *type, uint32_t *rev)
 {
@@ -59,11 +87,23 @@ void rzg_get_board_type(uint32_t *type, uint32_t *rev)
 		[BOARD_HIHOPE_RZ_G2H] = HH_ID,
 		[BOARD_HIHOPE_RZ_G2N] = HN_ID,
 		[BOARD_EK874_RZ_G2E] = EK_ID,
+		[BOARD_TQMARZG2N] = TQMARZG2N_ID,
+		[BOARD_TQMARZG2M] = TQMARZG2M_ID,
+		[BOARD_TQMARZG2H] = TQMARZG2H_ID,
 	};
-	uint32_t reg;
+
+	/*
+	 * Declare reg and boardInfo as maybe unused to
+	 * suppress error when building for TQMaRZG2x
+	 */
+	uint32_t __attribute__((unused)) reg;
 #if (RCAR_LSI != RZ_G2E)
-	uint32_t boardInfo;
+	uint32_t __attribute__((unused)) boardInfo;
 #endif /* RCAR_LSI == RZ_G2E */
+
+#ifdef RZG_TQMARZG2X
+	board_id = tqmarzg2x_get_board_type();
+#endif
 
 	if (board_id == BOARD_ID_UNKNOWN) {
 		board_id = BOARD_DEFAULT;
@@ -78,11 +118,14 @@ void rzg_get_board_type(uint32_t *type, uint32_t *rev)
 	}
 
 	reg = mmio_read_32(RCAR_PRR);
+
 #if (RCAR_LSI == RZ_G2E)
 	if (!(reg & RCAR_MINOR_MASK)) {
 		ek874_board_rev = 'B';
 	}
 		*rev = ek874_board_rev;
+#elif (RZG_TQMARZG2X)
+	*rev = board_tbl[*type][(uint8_t)(board_id & BOARD_REV_MASK)];
 #else
 	if ((reg & PRR_CUT_MASK) == RCAR_M3_CUT_VER11) {
 		*rev = board_tbl[*type][(uint8_t)(board_id & BOARD_REV_MASK)];

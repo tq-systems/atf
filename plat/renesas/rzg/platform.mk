@@ -242,6 +242,12 @@ ifeq (${LSI}, $(filter ${LSI}, G2E G2N))
   endif
 endif
 
+# Process RZG_TQMARZG2X flag
+ifndef RZG_TQMARZG2X
+RZG_TQMARZG2X := 0
+endif
+$(eval $(call add_define,RZG_TQMARZG2X))
+
 include drivers/renesas/common/ddr/ddr.mk
 include drivers/renesas/rzg/qos/qos.mk
 include drivers/renesas/rzg/pfc/pfc.mk
