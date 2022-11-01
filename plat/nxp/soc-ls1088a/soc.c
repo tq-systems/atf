@@ -18,9 +18,7 @@
 #include <lib/xlat_tables/xlat_tables_v2.h>
 #include <ls_interconnect.h>
 #include <ls_interrupt_mgmt.h>
-#if TRUSTED_BOARD_BOOT
 #include <nxp_smmu.h>
-#endif
 #include <nxp_timer.h>
 #include <plat_common.h>
 #include <plat_console.h>
@@ -252,6 +250,12 @@ void soc_early_init(void)
 				NXP_SD_BLOCK_BUF_SIZE,
 				MT_DEVICE | MT_RW | MT_NS);
 	}
+
+	/*
+	 * Unlock write access for SMMU SMMU_CBn_ACTLR in all Non-secure contexts.
+	 */
+	smmu_cache_unlock(NXP_SMMU_ADDR);
+	INFO("SMMU Cache Unlocking is Configured.\n");
 
 #if TRUSTED_BOARD_BOOT
 	uint32_t mode;
