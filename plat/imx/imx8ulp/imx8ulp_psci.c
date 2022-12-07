@@ -134,7 +134,7 @@ ps_apd_pwr_mode_cfgs_t apd_pwr_mode_cfgs = {
 		.swt_board_offs = 0x180,
 		.swt_mem_offs = 0x188,
 		.pmic_cfg = PMIC_CFG(0x23, 0xa, 0x2),
-		.pad_cfg = PAD_CFG(0xc, 0x0, 0x01e80a02),
+		.pad_cfg = PAD_CFG(0x0, 0xc, 0x01e80a02),
 		.bias_cfg = BIAS_CFG(0x0, 0x2, 0x2, 0x0),
 	},
 
@@ -143,7 +143,7 @@ ps_apd_pwr_mode_cfgs_t apd_pwr_mode_cfgs = {
 		.swt_board_offs = 0x170,
 		.swt_mem_offs = 0x178,
 		.pmic_cfg = PMIC_CFG(0x23, 0x2, 0x2),
-		.pad_cfg = PAD_CFG(0x0, 0x0, 0x01e80a00),
+		.pad_cfg = PAD_CFG(0x0, 0xc, 0x01e80a00),
 		.bias_cfg = BIAS_CFG(0x0, 0x2, 0x2, 0x0),
 	},
 
@@ -201,9 +201,21 @@ ps_apd_pmic_reg_data_cfgs_t pd_pmic_reg_cfgs = {
 	},
 	[1] = {
 		.tag = PMIC_REG_VALID_TAG,
+		.power_mode = PD_PWR_MODE,
+		.i2c_addr = 0x22,
+		.i2c_data = 0xb,
+	},
+	[2] = {
+		.tag = PMIC_REG_VALID_TAG,
 		.power_mode = ACT_PWR_MODE,
 		.i2c_addr = 0x30,
 		.i2c_data = 0x9d,
+	},
+	[3] = {
+		.tag = PMIC_REG_VALID_TAG,
+		.power_mode = ACT_PWR_MODE,
+		.i2c_addr = 0x22,
+		.i2c_data = 0x28,
 	},
 };
 
@@ -217,17 +229,32 @@ ps_apd_pmic_reg_data_cfgs_t dpd_pmic_reg_cfgs = {
 	},
 	[1] = {
 		.tag = PMIC_REG_VALID_TAG,
+		.power_mode = DPD_PWR_MODE,
+		.i2c_addr = 0x30,
+		.i2c_data = 0x9c,
+	},
+	[2] = {
+		.tag = PMIC_REG_VALID_TAG,
 		.power_mode = ACT_PWR_MODE,
 		.i2c_addr = 0x21,
 		.i2c_data = 0x79,
+	},
+	[3] = {
+		.tag = PMIC_REG_VALID_TAG,
+		.power_mode = ACT_PWR_MODE,
+		.i2c_addr = 0x30,
+		.i2c_data = 0x9d,
 	},
 };
 
 struct ps_pwr_mode_cfg_t *pwr_sys_cfg = (struct ps_pwr_mode_cfg_t *)UPWR_DRAM_SHARED_BASE_ADDR;
 extern bool is_lpav_owned_by_apd(void);
+extern int upower_pmic_i2c_read(uint32_t reg_addr, uint32_t *reg_val);
 
 void imx_set_pwr_mode_cfg(abs_pwr_mode_t mode)
 {
+	uint32_t volt;
+
 	if ( mode >= NUM_PWR_MODES)
 		return;
 
@@ -249,6 +276,9 @@ void imx_set_pwr_mode_cfg(abs_pwr_mode_t mode)
 				 sizeof(ps_apd_pmic_reg_data_cfgs_t));
 		/* LDO1 should be power off in PD mode */
 		} else if (mode == PD_PWR_MODE) {
+			/* overwrite the buck3 voltage setting in active mode */
+			upower_pmic_i2c_read(0x22, &volt);
+			pd_pmic_reg_cfgs[3].i2c_data = volt;
 			memcpy(&pwr_sys_cfg->ps_apd_pmic_reg_data_cfg, &pd_pmic_reg_cfgs,
 				 sizeof(ps_apd_pmic_reg_data_cfgs_t));
 		}
@@ -387,16 +417,10 @@ void __dead2 imx8ulp_pwr_domain_pwr_down_wfi(const psci_power_state_t *target_st
 
 void __dead2 imx8ulp_system_reset(void)
 {
-	/* Slow down apd nic frequency to make sure wdog can work well */
-	mmio_clrbits_32(IMX_CGC1_BASE + 0x34, GENMASK_32(29, 28));
-
 	imx_pwr_set_cpu_entry(0, IMX_ROM_ENTRY);
 
-	mmio_write_32(IMX_WDOG3_BASE + 0x4, 0xd928c520);
-	while ((mmio_read_32(IMX_WDOG3_BASE) & 0x800) == 0)
-		;
-	mmio_write_32(IMX_WDOG3_BASE + 0x8, 0x10);
-	mmio_write_32(IMX_WDOG3_BASE, 0x21a3);
+	/* Write invalid command to WDOG CNT to trigger reset */
+	mmio_write_32(IMX_WDOG3_BASE + 0x4, 0x12345678);
 
 	while (true)
 		;
@@ -431,6 +455,8 @@ void imx_get_sys_suspend_power_state(psci_power_state_t *req_state)
 		req_state->pwr_domain_state[i] = PLAT_POWER_DOWN_OFF_STATE;
 }
 
+extern void apd_io_pad_off(void);
+
 void __dead2 imx_system_off(void)
 {
 	int i;
@@ -448,6 +474,9 @@ void __dead2 imx_system_off(void)
 	}
 
 	plat_gic_cpuif_disable();
+
+	/* power off all the pad */
+	apd_io_pad_off();
 
 	/* Config the power mode info for entering DPD mode and ACT mode */
 	imx_set_pwr_mode_cfg(ADMA_PWR_MODE);

@@ -23,9 +23,7 @@
 #ifdef POLICY_FUSE_PROVISION
 #include <nxp_gpio.h>
 #endif
-#if TRUSTED_BOARD_BOOT
 #include <nxp_smmu.h>
-#endif
 #include <nxp_timer.h>
 #include <plat_console.h>
 #include <plat_gic.h>
@@ -36,6 +34,9 @@
 #endif
 
 #include <errata.h>
+#ifdef CONFIG_OCRAM_ECC_EN
+#include <ocram.h>
+#endif
 #include <ls_interrupt_mgmt.h>
 #include "plat_common.h"
 #ifdef NXP_NV_SW_MAINT_LAST_EXEC_DATA
@@ -238,6 +239,9 @@ void soc_preload_setup(void)
  ******************************************************************************/
 void soc_early_init(void)
 {
+#ifdef CONFIG_OCRAM_ECC_EN
+	ocram_init(NXP_OCRAM_ADDR, NXP_OCRAM_SIZE);
+#endif
 	dcfg_init(&dcfg_init_data);
 #ifdef POLICY_FUSE_PROVISION
 	gpio_init(&gpio_init_data);
@@ -279,6 +283,12 @@ void soc_early_init(void)
 #if (TRUSTED_BOARD_BOOT) || defined(POLICY_FUSE_PROVISION)
 	sfp_init(NXP_SFP_ADDR);
 #endif
+
+    /*
+     * Unlock write access for SMMU SMMU_CBn_ACTLR in all Non-secure contexts.
+     */
+    smmu_cache_unlock(NXP_SMMU_ADDR);
+    INFO("SMMU Cache Unlocking is Configured.\n");
 
 #if TRUSTED_BOARD_BOOT
 	uint32_t mode;
