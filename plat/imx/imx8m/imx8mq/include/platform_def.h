@@ -159,13 +159,4 @@
 #define CNTFID1_OFF			U(0x24)
 #define COUNTER_FREQUENCY		8000000 /* 8MHz */
 
-#define DEBUG_CONSOLE			0
-
-#ifdef IMX_ANDROID_BUILD
-#if !DEBUG_CONSOLE
-#undef LOG_LEVEL
-#define LOG_LEVEL 			0
-#endif
-#endif
-
 #define IMX_WDOG_B_RESET
