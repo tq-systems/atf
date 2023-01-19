@@ -445,9 +445,11 @@ else
 TF_LDFLAGS		+=	-O1
 TF_LDFLAGS		+=	--gc-sections
 # ld.lld doesn't recognize the errata flags,
-# therefore don't add those in that case
+# therefore don't add those in that case.
+# ld.lld reports section type mismatch warnings,
+# therefore don't add --fatal-warnings to it.
 ifeq ($(findstring ld.lld,$(notdir $(LD))),)
-TF_LDFLAGS		+=	$(TF_LDFLAGS_$(ARCH))
+TF_LDFLAGS		+=	$(TF_LDFLAGS_$(ARCH)) --fatal-warnings
 endif
 endif
 
