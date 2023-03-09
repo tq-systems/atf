@@ -74,6 +74,30 @@ static const struct aipstz_cfg aipstz[] = {
 	{0},
 };
 
+static struct imx_rdc_cfg rdc[] = {
+	/* Master domain assignment for Cortex-M */
+	RDC_MDAn(RDC_MDA_M4, DID1),
+
+	/* peripherals domain permission */
+	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
+	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
+	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
+	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+	/*
+	 * TODO: add hardware needed for Cortex-M domain. This has to be done
+	 * based on the needs of the actual project. Examples are UART, I2C, SPI,
+	 * etc:
+	 * RDC_PDAPn(RDC_PDAP_I2C<n>, D1R | D1W),
+	 */
+
+	/* memory region */
+
+	/* Sentinel */
+	{0},
+};
+
+
 static entry_point_info_t bl32_image_ep_info;
 static entry_point_info_t bl33_image_ep_info;
 
@@ -174,6 +198,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	if (console_base == 0U) {
 		console_base = imx8m_uart_get_base();
 	}
+
+	imx_rdc_init(rdc, console_base);
 
 	console_imx_uart_register(console_base, IMX_BOOT_UART_CLK_IN_HZ,
 		IMX_CONSOLE_BAUDRATE, &console);
