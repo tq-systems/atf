@@ -51,15 +51,31 @@ static const struct aipstz_cfg aipstz[] = {
 	{0},
 };
 
+#if (IMX_UART1_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART1
+#elif (IMX_UART2_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART2
+#elif (IMX_UART3_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART3
+#elif (IMX_UART4_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART4
+#endif
+
 #ifdef IMX_ANDROID_BUILD
 static const struct imx_rdc_cfg rdc[] = {
-	/* Master domain assignment */
+	/* Master domain assignment for Cortex-M */
 	RDC_MDAn(RDC_MDA_M7, DID1),
 
 	/* peripherals domain permission */
-	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
-	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
+	/* Add the BOOT UART to the Cortex-A domain with exclusive access */
+	RDC_PDAPn(RDC_PDAP_UART, D0R | D0W),
 	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+	/*
+	 * TODO: add hardware needed for Cortex-M domain. This has to be done
+	 * based on the needs of the actual project. Examples are UART, I2C, SPI,
+	 * etc:
+	 * RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+	 */
 
 	/* memory region */
 	RDC_MEM_REGIONn(16, 0x0, 0x0, 0xff),
@@ -101,13 +117,20 @@ static const struct imx_csu_cfg csu_cfg[] = {
 };
 #else
 static const struct imx_rdc_cfg rdc[] = {
-	/* Master domain assignment */
+	/* Master domain assignment for Cortex-M */
 	RDC_MDAn(RDC_MDA_M7, DID1),
 
 	/* peripherals domain permission */
-	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
-	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
+
+	/* Add the BOOT UART to the Cortex-A domain with exclusive access */
+	RDC_PDAPn(RDC_PDAP_UART, D0R | D0W),
 	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+	/*
+	 * TODO: add hardware needed for Cortex-M domain. This has to be done
+	 * based on the needs of the actual project. Examples are UART, I2C, SPI,
+	 * etc:
+	 * RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+	 */
 
 	/* memory region */
 	RDC_MEM_REGIONn(16, 0x0, 0x0, 0xff),
