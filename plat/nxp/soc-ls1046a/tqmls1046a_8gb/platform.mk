@@ -14,7 +14,7 @@ POVDD_ENABLE	:=	no
 NUM_OF_DDRC	:=	1
 DDRC_NUM_DIMM	:=	1
 DDRC_NUM_CS	:=	1
-DDR_ECC_EN	:=	yes
+DDR_ECC_EN	?=	yes
 CONFIG_STATIC_DDR 	:=	1
 
  # On-Board Flash Details

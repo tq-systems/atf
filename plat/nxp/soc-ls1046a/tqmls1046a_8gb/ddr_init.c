@@ -65,6 +65,10 @@ long long board_static_ddr(struct ddr_info *priv)
 {
 	memcpy(&priv->ddr_reg, &static_2000, sizeof(static_2000));
 
+#ifndef CONFIG_DDR_ECC_EN
+	priv->ddr_reg.sdram_cfg[0] &= ~SDRAM_CFG_ECC_EN;
+#endif
+
 	return 0x200000000ULL;
 }
 
