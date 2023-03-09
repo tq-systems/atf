@@ -59,6 +59,38 @@ static const struct aipstz_cfg aipstz[] = {
 	{0},
 };
 
+#if (IMX_UART1_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART1
+#elif (IMX_UART2_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART2
+#elif (IMX_UART3_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART3
+#elif (IMX_UART4_BASE_ADDR) == (IMX_BOOT_UART_BASE)
+#define RDC_PDAP_UART RDC_PDAP_UART4
+#endif
+
+static const struct imx_rdc_cfg rdc[] = {
+	/* Master domain assignment for Cortex-M */
+	RDC_MDAn(RDC_MDA_M4, DID1),
+
+	/* peripherals domain permission */
+	/* Add the BOOT UART to the Cortex-A domain with exclusive access */
+	RDC_PDAPn(RDC_PDAP_UART, D0R | D0W),
+	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+	/*
+	 * TODO: add hardware needed for Cortex-M domain. This has to be done
+	 * based on the needs of the actual project. Examples are UART, I2C, SPI,
+	 * etc:
+	 * RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+	 */
+
+	/* memory region */
+
+	/* Sentinel */
+	{0},
+};
+
+
 static entry_point_info_t bl32_image_ep_info;
 static entry_point_info_t bl33_image_ep_info;
 
@@ -154,6 +186,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	}
 
 	imx_aipstz_init(aipstz);
+
+	imx_rdc_init(rdc);
 
 	imx8m_caam_init();
 
