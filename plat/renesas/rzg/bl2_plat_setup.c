@@ -611,10 +611,17 @@ static void bl2_advertise_dram_size(uint32_t product)
 	case PRR_PRODUCT_M3:
 		/* 4GB(2GBx2 2ch split) */
 		dram_config[1] = 0x80000000ULL;
+#if !(RZG_TQMARZG2X)
+		/* TQMaRZG2M has only one channel */
 		dram_config[5] = 0x80000000ULL;
+#endif
 		break;
 	case PRR_PRODUCT_H3:
-#if (RCAR_DRAM_LPDDR4_MEMCONF == 0)
+#if (RZG_TQMARZG2X)
+		/* 4GB(2GBx2 2ch split) */
+		dram_config[1] = 0x80000000ULL;
+		dram_config[3] = 0x80000000ULL;
+#elif (RCAR_DRAM_LPDDR4_MEMCONF == 0)
 		/* 4GB(1GBx4) */
 		dram_config[1] = 0x40000000ULL;
 		dram_config[3] = 0x40000000ULL;
@@ -634,8 +641,12 @@ static void bl2_advertise_dram_size(uint32_t product)
 #endif /* RCAR_DRAM_LPDDR4_MEMCONF == 0 */
 		break;
 	case PRR_PRODUCT_M3N:
+#if (RZG_TQMARZG2X)
+		dram_config[1] = 0x80000000ULL;
+#else
 		/* 4GB(4GBx1) */
 		dram_config[1] = 0x100000000ULL;
+#endif
 		break;
 	case PRR_PRODUCT_E3:
 #if (RCAR_DRAM_DDR3L_MEMCONF == 0)
