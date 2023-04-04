@@ -16,8 +16,6 @@ BL2_HDR_SRC_OFFSET ?= 0x5000
 bl2_hdr_loc=$(shell echo $$(( $(BL2_HDR_SRC_OFFSET) / 1024 )))
 bl2_loc=$(shell echo $$(( $(BL2_SRC_OFFSET) / 1024 )))
 
-STATIC_PBL	?=	no
-
 .PHONY: pbl
 pbl:	${BUILD_PLAT}/bl2.bin
 ifeq ($(SECURE_BOOT),yes)
@@ -60,17 +58,9 @@ ifeq ($(RCW),"")
 else
 	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" --no-print-directory -C ${PLAT_TOOL_PATH};
 
-ifeq ($(STATIC_PBL),no)
-
 	# Add Block Copy command and populate boot loc ptrfor bl2.bin to RCW
 	${CREATE_PBL} -r ${RCW} -i ${BUILD_PLAT}/bl2.bin -b ${BOOT_MODE} -c ${SOC_NUM} -d ${BL2_BASE} -e ${BL2_BASE} \
 	-o ${BUILD_PLAT}/bl2_${BOOT_MODE}.pbl -f ${BL2_SRC_OFFSET};
-
-else
-
-	cp -f ${RCW} ${BUILD_PLAT}/bl2_${BOOT_MODE}.pbl
-
-endif
 
 	# Append the bl2.bin to the RCW image
 	@echo "bl2_loc is ${bl2_loc} KB"
