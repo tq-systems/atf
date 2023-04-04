@@ -506,14 +506,16 @@ bootptr_err:
 
 /***************************************************************************
  * Function	:	add_blk_cpy_cmd
- * Arguments	:	pbi_word - pointer to pbi commands
+ * Arguments	:	fp_rcw_pbi_op - Pointer to output file
  *			args - Command  line args flag.
+ *			boot_src - Source for block copy
  * Return	:	SUCCESS or FAILURE
  * Description	:	Add pbi commands for block copy cmd in pbi_words
  ***************************************************************************/
-int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
+int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args, boot_src_t boot_src)
 {
 	uint32_t blk_cpy_hdr;
+	uint32_t src_addr;
 	uint32_t new_file_size;
 	uint32_t align = 4;
 	int ret = FAILURE;
@@ -527,13 +529,13 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 	switch (pblimg.chassis) {
 	case CHASSIS_3:
 		/* Block copy command */
-		blk_cpy_hdr = blk_cpy_hdr_map_ch3[pblimg.boot_src];
-		pblimg.src_addr += base_addr_ch3[pblimg.boot_src];
+		blk_cpy_hdr = blk_cpy_hdr_map_ch3[boot_src];
+		src_addr = pblimg.src_addr + base_addr_ch3[boot_src];
 		break;
 	case CHASSIS_3_2:
 		/* Block copy command */
-		blk_cpy_hdr = blk_cpy_hdr_map_ch32[pblimg.boot_src];
-		pblimg.src_addr += base_addr_ch32[pblimg.boot_src];
+		blk_cpy_hdr = blk_cpy_hdr_map_ch32[boot_src];
+		src_addr = pblimg.src_addr + base_addr_ch32[boot_src];
 		break;
 	default:
 		printf("%s: Error invalid chassis type for this command.\n",
@@ -552,9 +554,8 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 	}
 
 	/* Add Src address word */
-	if (fwrite(&pblimg.src_addr,
-			sizeof(pblimg.src_addr), 1,
-			fp_rcw_pbi_op) != 1) {
+	if (fwrite(&src_addr, sizeof(src_addr), 1,
+		fp_rcw_pbi_op) != 1) {
 		printf("%s: Error writing BLK SRC Addr to the file.\n",
 				__func__);
 		goto blk_copy_err;
@@ -939,7 +940,7 @@ int main(int argc, char **argv)
 
 		/* Write acs write commands to output file */
 		if (pblimg.sec_img_size > 0) {
-			ret = add_blk_cpy_cmd(fp_rcw_pbi_op, args);
+			ret = add_blk_cpy_cmd(fp_rcw_pbi_op, args, pblimg.boot_src);
 			if (ret != SUCCESS) {
 				printf("%s: Function add_blk_cpy_cmd return failure.\n",
 					__func__);
