@@ -61,6 +61,7 @@ typedef enum {
 	FLXSPI_NOR_BOOT,
 	FLXSPI_NAND_BOOT,
 	FLXSPI_NAND4K_BOOT,
+	MMCSD_BOOT,
 	MAX_BOOT    /* must be last item in list */
 } boot_src_t;
 
@@ -84,7 +85,8 @@ uint32_t base_addr_ch3[MAX_BOOT] = {
 	BASE_ADDR_EMMC,
 	BASE_ADDR_UNDEFINED,	/*FLXSPI NOR */
 	BASE_ADDR_UNDEFINED,	/*FLXSPI NAND 2K */
-	BASE_ADDR_UNDEFINED	/*FLXSPI NAND 4K */
+	BASE_ADDR_UNDEFINED,	/*FLXSPI NAND 4K */
+	BASE_ADDR_UNDEFINED,
 };
 
 uint32_t base_addr_ch32[MAX_BOOT] = {
@@ -96,7 +98,8 @@ uint32_t base_addr_ch32[MAX_BOOT] = {
 	BASE_ADDR_EMMC,
 	BASE_ADDR_FLX_NOR,
 	BASE_ADDR_UNDEFINED,	/*FLXSPI NAND 2K */
-	BASE_ADDR_UNDEFINED	/*FLXSPI NAND 4K */
+	BASE_ADDR_UNDEFINED,	/*FLXSPI NAND 4K */
+	BASE_ADDR_UNDEFINED,
 };
 
 /* for Chassis 3 */
@@ -111,6 +114,7 @@ uint32_t blk_cpy_hdr_map_ch3[] = {
 	0x0,		/* FLEXSPI NOR_BOOT */
 	0x0,	/* FLEX SPI NAND2K BOOT */
 	0x0,	/* CHASIS3_2_NAND4K_BOOT */
+	0x0,	/* MMCSD_BOOT */
 };
 
 uint32_t blk_cpy_hdr_map_ch32[] = {
@@ -123,6 +127,7 @@ uint32_t blk_cpy_hdr_map_ch32[] = {
 	0x8000000F,	/* FLEXSPI NOR_BOOT */
 	0x8000000C,	/* FLEX SPI NAND2K BOOT */
 	0x8000000D,	/* CHASIS3_2_NAND4K_BOOT */
+	0x0,		/* MMCSD_BOOT */
 };
 
 char *boot_src_string[] = {
@@ -135,6 +140,7 @@ char *boot_src_string[] = {
 	"FLXSPI_NOR_BOOT",
 	"FLXSPI_NAND_BOOT",
 	"FLXSPI_NAND4K_BOOT",
+	"MMCSD_BOOT",
 };
 
 enum stop_command {
@@ -163,6 +169,9 @@ struct pbl_image {
 #define SUCCESS			 0
 #define FAILURE			-1
 #define CRC_STOP_CMD_ARM	0x08610040
+#define LOADCOND_CMD_CH3	0x80140000
+#define JUMP_CMD_CH3		0x80840000
+#define JUMPCOND_CMD_CH3	0x80850000
 #define CRC_STOP_CMD_ARM_CH3	0x808f0000
 #define STOP_CMD_ARM_CH3	0x80ff0000
 #define BYTE_SWAP_32(word)	((((word) & 0xff000000) >> 24)|	\
@@ -187,6 +196,10 @@ struct pbl_image {
 #define SOC_LS2080 2080
 #define SOC_LS2088 2088
 #define SOC_LX2160 2160
+
+#define PORSR1_CH3			0x1e00000
+#define PORSR1_RCW_SRC_MASK_CH3_2	0x07800000
+#define PORSR1_RCW_SRC_SD_CH3_2		0x04000000
 
 static uint32_t pbl_size;
 bool sb_flag;
@@ -588,6 +601,94 @@ blk_copy_err:
 }
 
 /***************************************************************************
+ * Function	:	add_word
+ * Arguments	:	fp_rcw_pbi_op - Pointer to output file
+ *			word - Data to add
+ * Return	:	SUCCESS or FAILURE
+ * Description	:	Helper to add a single PBI command word
+ ***************************************************************************/
+static int add_word(FILE *fp_rcw_pbi_op, uint32_t word)
+{
+	if (fwrite(&word, sizeof(word), 1, fp_rcw_pbi_op) != 1)
+		return FAILURE;
+
+	return SUCCESS;
+}
+
+/***************************************************************************
+ * Function	:	add_mmcsd_cmds
+ * Arguments	:	fp_rcw_pbi_op - Pointer to output file
+ *			args - Command  line args flag.
+ * Return	:	SUCCESS or FAILURE
+ * Description	:	Add PBI commands for eMMC/SD boot source detection
+ *			and corresponding block copy. The image will be loaded
+ *			from SD card if RCW_SRC == SD card, from eMMC otherwise.
+ ***************************************************************************/
+static int add_mmcsd_cmds(FILE *fp_rcw_pbi_op, uint16_t args)
+{
+	if (pblimg.chassis != CHASSIS_3_2) {
+		printf("%s: Error invalid chassis type for this command.\n",
+			__func__);
+		return FAILURE;
+	}
+
+	/* Load POR status register 1, mask RCW_SRC */
+	if (add_word(fp_rcw_pbi_op, LOADCOND_CMD_CH3) != SUCCESS) {
+		printf("%s: Error writing Load Condition command to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+	if (add_word(fp_rcw_pbi_op, PORSR1_CH3) != SUCCESS) {
+		printf("%s: Error writing Load Condition address to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+	if (add_word(fp_rcw_pbi_op, PORSR1_RCW_SRC_MASK_CH3_2) != SUCCESS) {
+		printf("%s: Error writing Load Condition mask to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+
+	/* Conditional jump over Jump Conditional (0x0c) + Block Copy (0x10)
+	 * + Jump (0x08) = 0x24 bytes if RCW_SRC == SD CARD */
+	if (add_word(fp_rcw_pbi_op, JUMPCOND_CMD_CH3) != SUCCESS) {
+		printf("%s: Error writing Jump Conditional command to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+	if (add_word(fp_rcw_pbi_op, 0x24) != SUCCESS) {
+		printf("%s: Error writing Jump Conditional offset to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+	if (add_word(fp_rcw_pbi_op, PORSR1_RCW_SRC_SD_CH3_2) != SUCCESS) {
+		printf("%s: Error writing Jump Conditional condition to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+
+	if (add_blk_cpy_cmd(fp_rcw_pbi_op, args, EMMC_BOOT) != SUCCESS)
+		return FAILURE;
+
+	/* Jump over Jump (0x08) + Block copy (0x10) = 0x18 bytes */
+	if (add_word(fp_rcw_pbi_op, JUMP_CMD_CH3) != SUCCESS) {
+		printf("%s: Error writing Jump command to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+	if (add_word(fp_rcw_pbi_op, 0x18) != SUCCESS) {
+		printf("%s: Error writing Jump offset to the file.\n",
+			__func__);
+		return FAILURE;
+	}
+
+	if (add_blk_cpy_cmd(fp_rcw_pbi_op, args, SD_BOOT) != SUCCESS)
+		return FAILURE;
+
+	return SUCCESS;
+}
+
+/***************************************************************************
  * Function	:	add_cpy_cmd
  * Arguments	:	pbi_word - pointer to pbi commands
  * Return	:	SUCCESS or FAILURE
@@ -783,6 +884,9 @@ int main(int argc, char **argv)
 				pblimg.boot_src = FLXSPI_NAND_BOOT;
 			} else if (strcmp(optarg, "flexspi_nand2k") == 0) {
 				pblimg.boot_src = FLXSPI_NAND4K_BOOT;
+			} else if (!strcmp(optarg, "mmcsd") ||
+				   !strcmp(optarg, "auto")) {
+				pblimg.boot_src = MMCSD_BOOT;
 			} else {
 				printf("CMD Error: Invalid boot source.\n");
 				goto exit_main;
@@ -891,8 +995,12 @@ int main(int argc, char **argv)
 		len_add = 0;
 		if (pblimg.ep != 0)
 			len_add += 2;
-		if (pblimg.sec_img_size > 0)
-			len_add += 4;
+		if (pblimg.sec_img_size > 0) {
+			if (pblimg.boot_src == MMCSD_BOOT)
+				len_add += 16;
+			else
+				len_add += 4;
+		}
 
 		if (fread(&word, sizeof(word), 1, fp_rcw_pbi_ip)
 			!= 1) {
@@ -953,11 +1061,20 @@ int main(int argc, char **argv)
 
 		/* Write acs write commands to output file */
 		if (pblimg.sec_img_size > 0) {
-			ret = add_blk_cpy_cmd(fp_rcw_pbi_op, args, pblimg.boot_src);
-			if (ret != SUCCESS) {
-				printf("%s: Function add_blk_cpy_cmd return failure.\n",
-					__func__);
-				goto exit_main;
+			if (pblimg.boot_src == MMCSD_BOOT) {
+				ret = add_mmcsd_cmds(fp_rcw_pbi_op, args);
+				if (ret != SUCCESS) {
+					printf("%s: Function add_mmcsd_cmds return failure.\n",
+						__func__);
+					goto exit_main;
+				}
+			} else {
+				ret = add_blk_cpy_cmd(fp_rcw_pbi_op, args, pblimg.boot_src);
+				if (ret != SUCCESS) {
+					printf("%s: Function add_blk_cpy_cmd return failure.\n",
+						__func__);
+					goto exit_main;
+				}
 			}
 		}
 
