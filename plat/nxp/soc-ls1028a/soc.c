@@ -21,6 +21,7 @@
 #endif
 #if TRUSTED_BOARD_BOOT
 #include <nxp_smmu.h>
+#include <snvs.h>
 #endif
 #include <nxp_timer.h>
 #include <plat_console.h>
@@ -144,6 +145,7 @@ void soc_early_init(void)
 #if TRUSTED_BOARD_BOOT
 	uint32_t mode;
 
+	snvs_init(NXP_SNVS_ADDR);
 	sfp_init(NXP_SFP_ADDR);
 
 	/*
