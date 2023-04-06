@@ -13,11 +13,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define NUM_MEM_BLOCK		1
-#define FOUR_BYTE_ALIGN		4
-#define EIGHT_BYTE_ALIGN	8
-#define SIZE_TWO_PBL_CMD	24
-
 /* Define for add_boot_ptr_cmd() */
 #define BOOTPTR_ADDR 0x09570604
 #define CSF_ADDR_SB 0x09ee0200
@@ -307,8 +302,8 @@ uint32_t crypto_calculate_checksum(FILE *fp_rcw_pbi_op, uint32_t num)
 
 	fseek(fp_rcw_pbi_op, 0L, SEEK_SET);
 	for (i = 0; i < num ; i++) {
-		if ((fread(&word, sizeof(word), NUM_MEM_BLOCK, fp_rcw_pbi_op))
-			< NUM_MEM_BLOCK) {
+		if ((fread(&word, sizeof(word), 1, fp_rcw_pbi_op))
+			< 1) {
 			printf("%s: Error reading word.\n", __func__);
 			return FAILURE;
 		}
@@ -354,8 +349,8 @@ int add_pbi_stop_cmd(FILE *fp_rcw_pbi_op, enum stop_command flag)
 		goto pbi_stop_err;
 	}
 
-	if (fwrite(&pbi_stop_cmd, sizeof(pbi_stop_cmd), NUM_MEM_BLOCK,
-			fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+	if (fwrite(&pbi_stop_cmd, sizeof(pbi_stop_cmd), 1,
+			fp_rcw_pbi_op) != 1) {
 		printf("%s: Error in Writing PBI STOP CMD\n", __func__);
 		goto pbi_stop_err;
 	}
@@ -388,8 +383,8 @@ int add_pbi_stop_cmd(FILE *fp_rcw_pbi_op, enum stop_command flag)
 		goto pbi_stop_err;
 	}
 
-	while ((fread(&data, sizeof(data), NUM_MEM_BLOCK, fp_rcw_pbi_op))
-		== NUM_MEM_BLOCK) {
+	while ((fread(&data, sizeof(data), 1, fp_rcw_pbi_op))
+		== 1) {
 		if (flag == CRC_STOP_COMMAND) {
 			if (pblimg.chassis == CHASSIS_2)
 				pbi_crc = crc_table
@@ -419,8 +414,8 @@ int add_pbi_stop_cmd(FILE *fp_rcw_pbi_op, enum stop_command flag)
 		goto pbi_stop_err;
 	}
 
-	if (fwrite(&pbi_crc, sizeof(pbi_crc), NUM_MEM_BLOCK, fp_rcw_pbi_op)
-		!= NUM_MEM_BLOCK) {
+	if (fwrite(&pbi_crc, sizeof(pbi_crc), 1, fp_rcw_pbi_op)
+		!= 1) {
 		printf("%s: Error in Writing PBI PBI CRC\n", __func__);
 		goto pbi_stop_err;
 	}
@@ -490,15 +485,15 @@ int add_boot_ptr_cmd(FILE *fp_rcw_pbi_op)
 		goto bootptr_err;
 	}
 
-	if (fwrite(&bootptr_addr, sizeof(bootptr_addr), NUM_MEM_BLOCK,
-		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+	if (fwrite(&bootptr_addr, sizeof(bootptr_addr), 1,
+		fp_rcw_pbi_op) != 1) {
 		printf("%s: Error in Writing PBI Words:[%d].\n",
 			 __func__, ret);
 		goto bootptr_err;
 	}
 
-	if (fwrite(&ep, sizeof(ep), NUM_MEM_BLOCK,
-		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+	if (fwrite(&ep, sizeof(ep), 1,
+		fp_rcw_pbi_op) != 1) {
 		printf("%s: Error in Writing PBI Words\n", __func__);
 		goto bootptr_err;
 	}
@@ -551,8 +546,8 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 	new_file_size = (pblimg.sec_img_size+(pblimg.sec_img_size % align));
 
 	/* Add Block copy command */
-	if (fwrite(&blk_cpy_hdr, sizeof(blk_cpy_hdr), NUM_MEM_BLOCK,
-		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+	if (fwrite(&blk_cpy_hdr, sizeof(blk_cpy_hdr), 1,
+		fp_rcw_pbi_op) != 1) {
 		printf("%s: Error writing blk_cpy_hdr to the file.\n",
 			 __func__);
 		goto blk_copy_err;
@@ -563,8 +558,8 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 
 	/* Add Src address word */
 	if (fwrite(&pblimg.src_addr + num_pad_bytes,
-		   sizeof(pblimg.src_addr), NUM_MEM_BLOCK,
-		   fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		   sizeof(pblimg.src_addr), 1,
+		   fp_rcw_pbi_op) != 1) {
 		printf("%s: Error writing BLK SRC Addr to the file.\n",
 			 __func__);
 		goto blk_copy_err;
@@ -572,7 +567,7 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 
 	/* Add Dest address word */
 	if (fwrite(&pblimg.addr, sizeof(pblimg.addr),
-		NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		1, fp_rcw_pbi_op) != 1) {
 		printf("%s: Error writing DST Addr to the file.\n",
 		__func__);
 		goto blk_copy_err;
@@ -580,7 +575,7 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 
 	/* Add size */
 	if (fwrite(&new_file_size, sizeof(new_file_size),
-		NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		1, fp_rcw_pbi_op) != 1) {
 		printf("%s: Error writing size to the file.\n",
 			__func__);
 		goto blk_copy_err;
@@ -620,25 +615,25 @@ int add_cpy_cmd(FILE *fp_rcw_pbi_op)
 	}
 	altcbar = 0xfff00000 & altcbar;
 	altcbar = BYTE_SWAP_32(altcbar >> 16);
-	if (fwrite(&ALTCBAR_ADDRESS, sizeof(ALTCBAR_ADDRESS), NUM_MEM_BLOCK,
-		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+	if (fwrite(&ALTCBAR_ADDRESS, sizeof(ALTCBAR_ADDRESS), 1,
+		fp_rcw_pbi_op) != 1) {
 		printf("%s: Error in writing address of ALTCFG CMD.\n",
 			 __func__);
 		goto add_cpy_err;
 	}
-	if (fwrite(&altcbar, sizeof(altcbar), NUM_MEM_BLOCK, fp_rcw_pbi_op)
-		!= NUM_MEM_BLOCK) {
+	if (fwrite(&altcbar, sizeof(altcbar), 1, fp_rcw_pbi_op)
+		!= 1) {
 		printf("%s: Error in writing ALTCFG CMD.\n", __func__);
 		goto add_cpy_err;
 	}
 	if (fwrite(&WAIT_CMD_WRITE_ADDRESS, sizeof(WAIT_CMD_WRITE_ADDRESS),
-		NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		1, fp_rcw_pbi_op) != 1) {
 		printf("%s: Error in writing address of WAIT_CMD.\n",
 			__func__);
 		goto add_cpy_err;
 	}
-	if (fwrite(&WAIT_CMD, sizeof(WAIT_CMD), NUM_MEM_BLOCK, fp_rcw_pbi_op)
-		!= NUM_MEM_BLOCK) {
+	if (fwrite(&WAIT_CMD, sizeof(WAIT_CMD), 1, fp_rcw_pbi_op)
+		!= 1) {
 		printf("%s: Error in writing WAIT_CMD.\n", __func__);
 		goto add_cpy_err;
 	}
@@ -646,8 +641,8 @@ int add_cpy_cmd(FILE *fp_rcw_pbi_op)
 		memset(pbi_data, 0, MAX_PBI_DATA_LEN_BYTE);
 
 		ret = fread(&pbi_data, MAX_PBI_DATA_LEN_BYTE,
-				NUM_MEM_BLOCK, fp_img);
-		if ((ret != NUM_MEM_BLOCK) && (!feof(fp_img))) {
+				1, fp_img);
+		if ((ret != 1) && (!feof(fp_img))) {
 			printf("%s: Error writing ALTCFG Word: [%d].\n",
 				__func__, ret);
 			goto add_cpy_err;
@@ -656,14 +651,14 @@ int add_cpy_cmd(FILE *fp_rcw_pbi_op)
 		dst_offset &= OFFSET_MASK;
 		pbi_cmd = WRITE_CMD_BASE | dst_offset;
 		pbi_cmd = BYTE_SWAP_32(pbi_cmd);
-		if (fwrite(&pbi_cmd, sizeof(pbi_cmd), NUM_MEM_BLOCK,
-			fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		if (fwrite(&pbi_cmd, sizeof(pbi_cmd), 1,
+			fp_rcw_pbi_op) != 1) {
 			printf("%s: Error writing ALTCFG Word write cmd.\n",
 				 __func__);
 			goto add_cpy_err;
 		}
-		if (fwrite(&pbi_data,  MAX_PBI_DATA_LEN_BYTE, NUM_MEM_BLOCK,
-			fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		if (fwrite(&pbi_data,  MAX_PBI_DATA_LEN_BYTE, 1,
+			fp_rcw_pbi_op) != 1) {
 			printf("%s: Error writing ALTCFG_Word.\n", __func__);
 			goto add_cpy_err;
 		}
@@ -833,8 +828,8 @@ int main(int argc, char **argv)
 	printf("Chassis Type: %d\n", pblimg.chassis);
 	switch (pblimg.chassis) {
 	case CHASSIS_2:
-		if (fread(&word, sizeof(word), NUM_MEM_BLOCK, fp_rcw_pbi_ip)
-			!= NUM_MEM_BLOCK) {
+		if (fread(&word, sizeof(word), 1, fp_rcw_pbi_ip)
+			!= 1) {
 			printf("%s: Error in reading word from the rcw file.\n",
 				__func__);
 			goto exit_main;
@@ -844,14 +839,14 @@ int main(int argc, char **argv)
 				|| BYTE_SWAP_32(word) == 0x000f400c) {
 				break;
 			}
-			if (fwrite(&word, sizeof(word), NUM_MEM_BLOCK,
-				fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+			if (fwrite(&word, sizeof(word), 1,
+				fp_rcw_pbi_op) != 1) {
 				printf("%s: [CH2] Error in Writing PBI Words\n",
 				__func__);
 				goto exit_main;
 			}
-			if (fread(&word, sizeof(word), NUM_MEM_BLOCK,
-				fp_rcw_pbi_ip) != NUM_MEM_BLOCK) {
+			if (fread(&word, sizeof(word), 1,
+				fp_rcw_pbi_ip) != 1) {
 				printf("%s: [CH2] Error in Reading PBI Words\n",
 					__func__);
 				goto exit_main;
@@ -883,8 +878,8 @@ int main(int argc, char **argv)
 
 	case CHASSIS_3:
 	case CHASSIS_3_2:
-		if (fread(&word, sizeof(word), NUM_MEM_BLOCK, fp_rcw_pbi_ip)
-			!= NUM_MEM_BLOCK) {
+		if (fread(&word, sizeof(word), 1, fp_rcw_pbi_ip)
+			!= 1) {
 			printf("%s: Error reading PBI Cmd.\n", __func__);
 			goto exit_main;
 		}
@@ -911,14 +906,14 @@ int main(int argc, char **argv)
 				if (word == FAILURE)
 					goto exit_main;
 			}
-			if (fwrite(&word, sizeof(word),	NUM_MEM_BLOCK,
-				fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+			if (fwrite(&word, sizeof(word),	1,
+				fp_rcw_pbi_op) != 1) {
 				printf("%s: [CH3] Error in Writing PBI Words\n",
 					__func__);
 				goto exit_main;
 			}
-			if (fread(&word, sizeof(word), NUM_MEM_BLOCK,
-				fp_rcw_pbi_ip) != NUM_MEM_BLOCK) {
+			if (fread(&word, sizeof(word), 1,
+				fp_rcw_pbi_ip) != 1) {
 				printf("%s: [CH3] Error in Reading PBI Words\n",
 					 __func__);
 				goto exit_main;
