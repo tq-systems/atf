@@ -172,7 +172,6 @@ struct pbl_image {
 #define PBI_LEN_MASK	0xFFF00000
 #define PBI_LEN_SHIFT	20
 #define NUM_RCW_WORD	35
-#define PBI_LEN_ADD		6
 
 #define MAX_CRC_ENTRIES 256
 
@@ -681,7 +680,7 @@ int main(int argc, char **argv)
 	int tmp;
 	uint16_t args = ARG_INIT_MASK;
 	FILE *fp_rcw_pbi_ip = NULL, *fp_rcw_pbi_op = NULL;
-	uint32_t word, word_1;
+	uint32_t word, word_1, len_add;
 	int ret = FAILURE;
 	enum stop_command flag_stop_cmd = CRC_STOP_COMMAND;
 
@@ -878,6 +877,15 @@ int main(int argc, char **argv)
 
 	case CHASSIS_3:
 	case CHASSIS_3_2:
+		/* Number of added PBL words. How many commands are added
+		 * depends on the passed command line arguments.
+		 */
+		len_add = 0;
+		if (pblimg.ep != 0)
+			len_add += 2;
+		if (pblimg.sec_img_size > 0)
+			len_add += 4;
+
 		if (fread(&word, sizeof(word), 1, fp_rcw_pbi_ip)
 			!= 1) {
 			printf("%s: Error reading PBI Cmd.\n", __func__);
@@ -886,12 +894,11 @@ int main(int argc, char **argv)
 		while (word != 0x808f0000 && word != 0x80ff0000) {
 			pbl_size++;
 			/* 11th words in RCW has PBL length. Update it
-			 * with new length. 2 comamnds get added
-			 * Block copy + CCSR Write/CSF header write
+			 * with new length.
 			 */
 			if (pbl_size == 11) {
 				word_1 = (word & PBI_LEN_MASK)
-					+ (PBI_LEN_ADD << 20);
+					+ (len_add << 20);
 				word = word & ~PBI_LEN_MASK;
 				word = word | word_1;
 			}
