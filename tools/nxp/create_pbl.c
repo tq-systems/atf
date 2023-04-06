@@ -517,7 +517,6 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 	uint32_t new_file_size;
 	uint32_t align = 4;
 	int ret = FAILURE;
-	int num_pad_bytes = 0;
 
 	if ((args & BL2_BIN_STRG_LOC_BOOT_SRC_ARG_MASK) == 0) {
 		printf("ERROR: Offset not specified for Block Copy Cmd.\n");
@@ -552,15 +551,12 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 		goto blk_copy_err;
 	}
 
-	if ((args & BL2_BIN_STRG_LOC_BOOT_SRC_ARG_MASK) == 0)
-		num_pad_bytes = pblimg.src_addr % 4;
-
 	/* Add Src address word */
-	if (fwrite(&pblimg.src_addr + num_pad_bytes,
-		   sizeof(pblimg.src_addr), 1,
-		   fp_rcw_pbi_op) != 1) {
+	if (fwrite(&pblimg.src_addr,
+			sizeof(pblimg.src_addr), 1,
+			fp_rcw_pbi_op) != 1) {
 		printf("%s: Error writing BLK SRC Addr to the file.\n",
-			 __func__);
+				__func__);
 		goto blk_copy_err;
 	}
 
