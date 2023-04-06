@@ -609,7 +609,6 @@ int add_cpy_cmd(FILE *fp_rcw_pbi_op)
 	uint32_t ALTCBAR_ADDRESS = BYTE_SWAP_32(0x09570158);
 	uint32_t WAIT_CMD_WRITE_ADDRESS = BYTE_SWAP_32(0x096100c0);
 	uint32_t WAIT_CMD = BYTE_SWAP_32(0x000FFFFF);
-	int file_size;
 	uint32_t pbi_cmd, altcbar;
 	uint8_t pbi_data[MAX_PBI_DATA_LEN_BYTE];
 	uint32_t dst_offset;
@@ -624,7 +623,6 @@ int add_cpy_cmd(FILE *fp_rcw_pbi_op)
 		      pblimg.sec_imgnm);
 		goto add_cpy_err;
 	}
-	file_size = get_filesize(pblimg.sec_imgnm);
 	altcbar = 0xfff00000 & altcbar;
 	altcbar = BYTE_SWAP_32(altcbar >> 16);
 	if (fwrite(&ALTCBAR_ADDRESS, sizeof(ALTCBAR_ADDRESS), NUM_MEM_BLOCK,
@@ -675,7 +673,6 @@ int add_cpy_cmd(FILE *fp_rcw_pbi_op)
 			goto add_cpy_err;
 		}
 		dst_offset += MAX_PBI_DATA_LEN_BYTE;
-		file_size -= MAX_PBI_DATA_LEN_BYTE;
 	} while (!feof(fp_img));
 
 	ret = SUCCESS;
