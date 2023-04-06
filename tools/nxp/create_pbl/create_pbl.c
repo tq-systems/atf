@@ -500,12 +500,10 @@ int add_boot_ptr_cmd(FILE *fp_rcw_pbi_op)
 		goto bootptr_err;
 	}
 
-	if (pblimg.ep != 0) {
-		if (fwrite(&pblimg.ep, sizeof(pblimg.ep), NUM_MEM_BLOCK,
-			fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
-			printf("%s: Error in Writing PBI Words\n", __func__);
-			goto bootptr_err;
-		}
+	if (fwrite(&pblimg.ep, sizeof(pblimg.ep), NUM_MEM_BLOCK,
+		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		printf("%s: Error in Writing PBI Words\n", __func__);
+		goto bootptr_err;
 	}
 
 	printf("\nBoot Location Pointer= 0x%x\n",
@@ -696,7 +694,6 @@ int main(int argc, char **argv)
 	FILE *fp_rcw_pbi_ip = NULL, *fp_rcw_pbi_op = NULL;
 	uint32_t word, word_1;
 	int ret = FAILURE;
-	bool bootptr_flag = false;
 	enum stop_command flag_stop_cmd = CRC_STOP_COMMAND;
 
 	/* Initializing the global structure to zero. */
@@ -725,7 +722,6 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'e':
-			bootptr_flag = true;
 			pblimg.ep = strtoull(optarg, &ptr, 16);
 			if (*ptr != 0) {
 				fprintf(stderr,
@@ -871,7 +867,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		if (bootptr_flag == true) {
+		if (pblimg.ep != 0) {
 			/* Add command to set boot_loc ptr */
 			ret = add_boot_ptr_cmd(fp_rcw_pbi_op);
 			if (ret != SUCCESS) {
@@ -947,7 +943,7 @@ int main(int argc, char **argv)
 				flag_stop_cmd = STOP_COMMAND;
 			}
 		}
-		if (bootptr_flag == true) {
+		if (pblimg.ep != 0) {
 			/* Add command to set boot_loc ptr */
 			ret = add_boot_ptr_cmd(fp_rcw_pbi_op);
 			if (ret != SUCCESS) {
