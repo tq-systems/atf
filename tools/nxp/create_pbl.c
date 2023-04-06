@@ -160,6 +160,7 @@ struct pbl_image {
 	uint32_t src_addr;	/* Source Address */
 	uint32_t addr;		/* Load address */
 	uint32_t ep;		/* Entry point <opt> default is load address */
+	uint32_t sec_img_size;	/* Size of Input BL2 binary */
 	chassis_t chassis;	/* Chassis type */
 } pblimg;
 
@@ -522,7 +523,7 @@ bootptr_err:
 int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 {
 	uint32_t blk_cpy_hdr;
-	uint32_t file_size, new_file_size;
+	uint32_t new_file_size;
 	uint32_t align = 4;
 	int ret = FAILURE;
 	int num_pad_bytes = 0;
@@ -550,45 +551,42 @@ int add_blk_cpy_cmd(FILE *fp_rcw_pbi_op, uint16_t args)
 		goto blk_copy_err;
 	}
 
-	file_size = get_filesize(pblimg.sec_imgnm);
-	if (file_size > 0) {
-		new_file_size = (file_size+(file_size % align));
+	new_file_size = (pblimg.sec_img_size+(pblimg.sec_img_size % align));
 
-		/* Add Block copy command */
-		if (fwrite(&blk_cpy_hdr, sizeof(blk_cpy_hdr), NUM_MEM_BLOCK,
-			fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
-			printf("%s: Error writing blk_cpy_hdr to the file.\n",
-				 __func__);
-			goto blk_copy_err;
-		}
+	/* Add Block copy command */
+	if (fwrite(&blk_cpy_hdr, sizeof(blk_cpy_hdr), NUM_MEM_BLOCK,
+		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		printf("%s: Error writing blk_cpy_hdr to the file.\n",
+			 __func__);
+		goto blk_copy_err;
+	}
 
-		if ((args & BL2_BIN_STRG_LOC_BOOT_SRC_ARG_MASK) == 0)
-			num_pad_bytes = pblimg.src_addr % 4;
+	if ((args & BL2_BIN_STRG_LOC_BOOT_SRC_ARG_MASK) == 0)
+		num_pad_bytes = pblimg.src_addr % 4;
 
-		/* Add Src address word */
-		if (fwrite(&pblimg.src_addr + num_pad_bytes,
-			   sizeof(pblimg.src_addr), NUM_MEM_BLOCK,
-			   fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
-			printf("%s: Error writing BLK SRC Addr to the file.\n",
-				 __func__);
-			goto blk_copy_err;
-		}
+	/* Add Src address word */
+	if (fwrite(&pblimg.src_addr + num_pad_bytes,
+		   sizeof(pblimg.src_addr), NUM_MEM_BLOCK,
+		   fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		printf("%s: Error writing BLK SRC Addr to the file.\n",
+			 __func__);
+		goto blk_copy_err;
+	}
 
-		/* Add Dest address word */
-		if (fwrite(&pblimg.addr, sizeof(pblimg.addr),
-			NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
-			printf("%s: Error writing DST Addr to the file.\n",
+	/* Add Dest address word */
+	if (fwrite(&pblimg.addr, sizeof(pblimg.addr),
+		NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		printf("%s: Error writing DST Addr to the file.\n",
+		__func__);
+		goto blk_copy_err;
+	}
+
+	/* Add size */
+	if (fwrite(&new_file_size, sizeof(new_file_size),
+		NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
+		printf("%s: Error writing size to the file.\n",
 			__func__);
-			goto blk_copy_err;
-		}
-
-		/* Add size */
-		if (fwrite(&new_file_size, sizeof(new_file_size),
-			NUM_MEM_BLOCK, fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
-			printf("%s: Error writing size to the file.\n",
-				__func__);
-			goto blk_copy_err;
-		}
+		goto blk_copy_err;
 	}
 
 	ret = SUCCESS;
@@ -735,13 +733,13 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			pblimg.sec_imgnm = optarg;
-			file = fopen(pblimg.sec_imgnm, "r");
-			if (!file) {
+			tmp = get_filesize(pblimg.sec_imgnm);
+			if (tmp < 0) {
 				printf("CMD Error: Opening Input file.\n");
 				goto exit_main;
 			} else {
 				args |= IN_FILE_NAME_ARG_MASK;
-				fclose(file);
+				pblimg.sec_img_size = tmp;
 			}
 			break;
 		case 'c':
@@ -947,11 +945,13 @@ int main(int argc, char **argv)
 		}
 
 		/* Write acs write commands to output file */
-		ret = add_blk_cpy_cmd(fp_rcw_pbi_op, args);
-		if (ret != SUCCESS) {
-			printf("%s: Function add_blk_cpy_cmd return failure.\n",
-				 __func__);
-			goto exit_main;
+		if (pblimg.sec_img_size > 0) {
+			ret = add_blk_cpy_cmd(fp_rcw_pbi_op, args);
+			if (ret != SUCCESS) {
+				printf("%s: Function add_blk_cpy_cmd return failure.\n",
+					__func__);
+				goto exit_main;
+			}
 		}
 
 		/* Add stop command after adding pbi commands */
