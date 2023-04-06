@@ -467,7 +467,7 @@ filesize_err:
  ***************************************************************************/
 int add_boot_ptr_cmd(FILE *fp_rcw_pbi_op)
 {
-	uint32_t bootptr_addr;
+	uint32_t bootptr_addr, ep;
 	int ret = FAILURE;
 
 	switch (pblimg.chassis) {
@@ -476,7 +476,7 @@ int add_boot_ptr_cmd(FILE *fp_rcw_pbi_op)
 			bootptr_addr = BYTE_SWAP_32(CSF_ADDR_SB);
 		else
 			bootptr_addr = BYTE_SWAP_32(BOOTPTR_ADDR);
-		pblimg.ep    = BYTE_SWAP_32(pblimg.ep);
+		ep    = BYTE_SWAP_32(pblimg.ep);
 		break;
 	case CHASSIS_3:
 	case CHASSIS_3_2:
@@ -484,6 +484,7 @@ int add_boot_ptr_cmd(FILE *fp_rcw_pbi_op)
 			bootptr_addr = CSF_ADDR_SB_CH3;
 		else
 			bootptr_addr = BOOTPTR_ADDR_CH3;
+		ep    = pblimg.ep;
 		break;
 	case CHASSIS_UNKNOWN:
 	case CHASSIS_MAX:
@@ -500,15 +501,13 @@ int add_boot_ptr_cmd(FILE *fp_rcw_pbi_op)
 		goto bootptr_err;
 	}
 
-	if (fwrite(&pblimg.ep, sizeof(pblimg.ep), NUM_MEM_BLOCK,
+	if (fwrite(&ep, sizeof(ep), NUM_MEM_BLOCK,
 		fp_rcw_pbi_op) != NUM_MEM_BLOCK) {
 		printf("%s: Error in Writing PBI Words\n", __func__);
 		goto bootptr_err;
 	}
 
-	printf("\nBoot Location Pointer= 0x%x\n",
-	       pblimg.chassis == CHASSIS_2 ? BYTE_SWAP_32(pblimg.ep) :
-	       pblimg.ep);
+	printf("\nBoot Location Pointer= 0x%x\n", pblimg.ep);
 	ret = SUCCESS;
 
 bootptr_err:
