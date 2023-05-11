@@ -36,7 +36,9 @@ WARM_BOOT	:=	no
 
 SUPPORTED_BOOT_MODE	:=	flexspi_nor	\
 				sd		\
-				emmc
+				emmc		\
+				mmcsd		\
+				auto
 
 BOARD_PATH	:=	${PLAT_SOC_PATH}/${BOARD}
 BL2_SOURCES	+=	${BOARD_PATH}/ddr_init.c
