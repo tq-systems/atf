@@ -200,6 +200,9 @@ struct pbl_image {
 #define PORSR1_RCW_SRC_MASK_CH3_2	0x07800000
 #define PORSR1_RCW_SRC_SD_CH3_2		0x04000000
 
+#define PORSR1_RCW_SRC_MASK_CH3		0x3F800000
+#define PORSR1_RCW_SRC_SD_CH3		0x20000000
+
 static uint32_t pbl_size;
 bool sb_flag;
 
@@ -622,7 +625,18 @@ static int add_word(FILE *fp_rcw_pbi_op, uint32_t word)
  ***************************************************************************/
 static int add_mmcsd_cmds(FILE *fp_rcw_pbi_op, uint16_t args)
 {
-	if (pblimg.chassis != CHASSIS_3_2) {
+	uint32_t porsr1_rcw_src_mask, porsr1_rcw_src_sd;
+
+	switch (pblimg.chassis) {
+	case CHASSIS_3_2:
+		porsr1_rcw_src_mask = PORSR1_RCW_SRC_MASK_CH3_2;
+		porsr1_rcw_src_sd = PORSR1_RCW_SRC_SD_CH3_2;
+		break;
+	case CHASSIS_3:
+		porsr1_rcw_src_mask = PORSR1_RCW_SRC_MASK_CH3;
+		porsr1_rcw_src_sd = PORSR1_RCW_SRC_SD_CH3;
+		break;
+	default:
 		printf("%s: Error invalid chassis type for this command.\n",
 			__func__);
 		return FAILURE;
@@ -639,7 +653,7 @@ static int add_mmcsd_cmds(FILE *fp_rcw_pbi_op, uint16_t args)
 			__func__);
 		return FAILURE;
 	}
-	if (add_word(fp_rcw_pbi_op, PORSR1_RCW_SRC_MASK_CH3_2) != SUCCESS) {
+	if (add_word(fp_rcw_pbi_op, porsr1_rcw_src_mask) != SUCCESS) {
 		printf("%s: Error writing Load Condition mask to the file.\n",
 			__func__);
 		return FAILURE;
@@ -657,7 +671,7 @@ static int add_mmcsd_cmds(FILE *fp_rcw_pbi_op, uint16_t args)
 			__func__);
 		return FAILURE;
 	}
-	if (add_word(fp_rcw_pbi_op, PORSR1_RCW_SRC_SD_CH3_2) != SUCCESS) {
+	if (add_word(fp_rcw_pbi_op, porsr1_rcw_src_sd) != SUCCESS) {
 		printf("%s: Error writing Jump Conditional condition to the file.\n",
 			__func__);
 		return FAILURE;
