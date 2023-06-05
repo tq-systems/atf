@@ -390,7 +390,7 @@ int emmc_io_setup(void)
 			NXP_ESDHC_ADDR,
 			NXP_SD_BLOCK_BUF_ADDR,
 			NXP_SD_BLOCK_BUF_SIZE,
-			true);
+			false);
 	if (ret != 0) {
 		return ret;
 	}
