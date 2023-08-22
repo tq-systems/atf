@@ -135,6 +135,7 @@ static const struct imx_rdc_cfg rdc[] = {
 
 	/* Add the BOOT UART to the Cortex-A domain with exclusive access */
 	RDC_PDAPn(RDC_PDAP_UART, D0R | D0W),
+	RDC_PDAPn(RDC_PDAP_WDOG1, D0R | D0W),
 	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
 	/*
 	 * TODO: add hardware needed for Cortex-M domain. This has to be done
