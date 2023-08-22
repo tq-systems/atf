@@ -84,6 +84,7 @@ static struct imx_rdc_cfg rdc[] = {
 	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
 	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
 	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+	RDC_PDAPn(RDC_PDAP_WDOG1, D0R | D0W),
 	/*
 	 * TODO: add hardware needed for Cortex-M domain. This has to be done
 	 * based on the needs of the actual project. Examples are UART, I2C, SPI,
