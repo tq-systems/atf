@@ -125,9 +125,6 @@ static struct imx_rdc_cfg rdc[] = {
 	 */
 
 	/* memory region */
-	RDC_MEM_REGIONn(16, 0x0, 0x0, 0xff),
-	RDC_MEM_REGIONn(17, 0x0, 0x0, 0xff),
-	RDC_MEM_REGIONn(18, 0x0, 0x0, 0xff),
 
 	/* Sentinel */
 	{0},
