@@ -248,6 +248,11 @@ RZG_TQMARZG2X := 0
 endif
 $(eval $(call add_define,RZG_TQMARZG2X))
 
+ifndef RZG_TQMARZG2X_8GB
+RZG_TQMARZG2X_8GB := 0
+endif
+$(eval $(call add_define,RZG_TQMARZG2X_8GB))
+
 include drivers/renesas/common/ddr/ddr.mk
 include drivers/renesas/rzg/qos/qos.mk
 include drivers/renesas/rzg/pfc/pfc.mk

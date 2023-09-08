@@ -609,12 +609,17 @@ static void bl2_advertise_dram_size(uint32_t product)
 
 	switch (product) {
 	case PRR_PRODUCT_M3:
+#if (RZG_TQMARZG2X_8GB)
+		dram_config[1] = 0x100000000ULL;
+		dram_config[5] = 0x100000000ULL;
+#else
 		/* 4GB(2GBx2 2ch split) */
 		dram_config[1] = 0x80000000ULL;
 #if !(RZG_TQMARZG2X)
 		/* TQMaRZG2M has only one channel */
 		dram_config[5] = 0x80000000ULL;
 #endif
+#endif /* RZG_TQMARZG2X_8GB */
 		break;
 	case PRR_PRODUCT_H3:
 #if (RZG_TQMARZG2X)
