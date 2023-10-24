@@ -6,7 +6,7 @@
 
 # board-specific build parameters
 BOOT_MODE	?= 	qspi
-BOARD		:=	tqmls1088a
+BOARD		:=	tqmls1088a_4gb
 
 # DDR Compilation Configs
 NUM_OF_DDRC	:=	1
