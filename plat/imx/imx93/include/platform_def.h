@@ -53,7 +53,6 @@
 #define MAX_MMAP_REGIONS		16
 #endif
 
-#define IMX_LPUART_BASE			0x44380000
 #define IMX_BOOT_UART_CLK_IN_HZ		24000000 /* Select 24MHz oscillator */
 #define IMX_CONSOLE_BAUDRATE		115200
 

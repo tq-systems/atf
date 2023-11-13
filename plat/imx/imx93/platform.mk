@@ -47,6 +47,9 @@ ifeq (${SPD},trusty)
 	BL31_SOURCES += plat/imx/common/ffa_shared_mem.c
 endif
 
+IMX_LPUART_BASE	?=	0x44380000
+$(eval $(call add_define,IMX_LPUART_BASE))
+
 RESET_TO_BL31		:=	1
 HW_ASSISTED_COHERENCY	:= 	1
 USE_COHERENT_MEM	:=	0
