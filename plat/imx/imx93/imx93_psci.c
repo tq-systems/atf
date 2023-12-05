@@ -16,6 +16,7 @@
 #include <drivers/arm/gicv3.h>
 #include "../drivers/arm/gic/v3/gicv3_private.h"
 
+#include <sema42.h>
 #include <trdc.h>
 #include <plat_imx8.h>
 
@@ -116,6 +117,10 @@
 
 #define M33_ACTIVE_FLAG		(IMX_SRC_BASE + 0x54)
 #define M33_ACTIVE		U(0x5555)
+#define DDR_RETENTION		(IMX_SRC_BASE + 0x58)
+#define DDR_RETENTION_A55_FLAG	BIT(0)
+#define DDR_RETENTION_M33_FLAG	BIT(1)
+
 
 #define CORE_PWR_STATE(state) ((state)->pwr_domain_state[MPIDR_AFFLVL0])
 #define CLUSTER_PWR_STATE(state) ((state)->pwr_domain_state[MPIDR_AFFLVL1])
@@ -513,7 +518,9 @@ void nicmix_pwr_up(unsigned int core_id)
 	mmio_setbits_32(CCM_ROOT_SLICE(NIC_CLK_ROOT), clock_root[3] & ROOT_MUX_MASK);
 
 	/* keep nicmix on when exit from system suspend */
-	mmio_write_32(IMX_SRC_BASE + 0x1c00 + 0x14, BIT(12) | BIT(13));
+	mmio_write_32(IMX_SRC_BASE + 0x1c00 + 0x14, 0x33333333);
+	mmio_clrbits_32(IMX_SRC_BASE + 0x1c00 + 0x4, BIT(2));
+
 	trdc_n_reinit();
 	nicmix_qos_init();
 	plat_gic_restore(core_id, &imx_gicv3_ctx);
@@ -732,6 +739,8 @@ void imx_pwr_domain_off(const psci_power_state_t *target_state)
 
 	plat_gic_cpuif_disable();
 
+	write_clusterpwrdn(DSU_CLUSTER_PWR_OFF);
+
 	/* switch to GPC wakeup source */
 	mmio_clrbits_32(IMX_GPC_BASE + A55C0_CMC_OFFSET + 0x800 * core_id + CM_MISC, IRQ_MUX);
 
@@ -753,7 +762,6 @@ void imx_pwr_domain_suspend(const psci_power_state_t *target_state)
 {
 	uint64_t mpidr = read_mpidr_el1();
 	unsigned int core_id = MPIDR_AFFLVL1_VAL(mpidr);
-	uint32_t val;
 
 	/* do cpu level config */
 	if (is_local_state_off(CORE_PWR_STATE(target_state))) {
@@ -768,24 +776,49 @@ void imx_pwr_domain_suspend(const psci_power_state_t *target_state)
 		/* config the A55 cluster target mode to WAIT */
 		mmio_write_32(IMX_GPC_BASE + A55C0_CMC_OFFSET + 0x800 * 2 + CM_MODE_CTRL, CM_MODE_WAIT);
 
-		/* config DSU for cluster power down */
-		val = read_clusterpwrdn();
-		val &= ~DSU_CLUSTER_PWR_MASK;
-		val |= DSU_CLUSTER_PWR_OFF;
 		/* enable L3 retention */
 		if (is_local_state_retn(CLUSTER_PWR_STATE(target_state))) {
 			mmio_setbits_32(IMX_SRC_BASE + A55C0_MEM + 0x400 * 3 + 0x4, MEM_LP_RETENTION);
-			val |= BIT(1);
+			write_clusterpwrdn(DSU_CLUSTER_PWR_OFF | BIT(1));
+		} else {
+			write_clusterpwrdn(DSU_CLUSTER_PWR_OFF);
 		}
-
-		write_clusterpwrdn(val);
-
-		/* FIXME: slow down S401 clock: 24M OSC */
-		mmio_clrbits_32(0x44450200, GENMASK_32(9, 8));
 	}
 
 	if (is_local_state_retn(SYSTEM_PWR_STATE(target_state))) {
-		if (!is_m33_active()) {
+		/*
+		 * if M33 is active to use DRAM and the bus fabric, need to do
+		 * special handling to reduce the system power.
+		 */
+		if (is_m33_active()) {
+			dcsw_op_all(DCCISW);
+
+			/* make sure sema42_1 clock enabled */
+			mmio_write_32(LPCG(17), 0x1);
+			/* set LPM CUR domaon control to ON in case of CPU_LPM control */
+			mmio_write_32(LPCG(17) + LPCG_CUR, 0x3);
+
+			sema42_lock(0);
+			/* put ddr into retention if not used by m33 */
+			if (mmio_read_32(DDR_RETENTION) & DDR_RETENTION_M33_FLAG) {
+				dram_enter_retention();
+			}
+			/* DDR is not used by A55 now */
+			mmio_setbits_32(DDR_RETENTION, DDR_RETENTION_A55_FLAG);
+
+			/* swith wakeup axi, hsio & nic to 24M when NICMIX power down */
+			clock_root[1] = mmio_read_32(CCM_ROOT_SLICE(WAKEUP_AXI_ROOT));
+			clock_root[2] = mmio_read_32(CCM_ROOT_SLICE(HSIO_CLK_ROOT));
+			clock_root[3] = mmio_read_32(CCM_ROOT_SLICE(NIC_CLK_ROOT));
+
+			/* slow down WAKEUP AXI to rate / DIV5 */
+			mmio_clrsetbits_32(CCM_ROOT_SLICE(WAKEUP_AXI_ROOT), 0xff, 0x4);
+			/* slow down NIC CLK to rate / DIV8 */
+			mmio_clrsetbits_32(CCM_ROOT_SLICE(NIC_CLK_ROOT), 0xff, 0x7);
+			mmio_clrbits_32(CCM_ROOT_SLICE(HSIO_CLK_ROOT), ROOT_MUX_MASK);
+
+			sema42_unlock(0);
+		} else {
 			/*
 			 * for the A55 cluster, the cache disable/flushing is controlled by HW,
 			 * so flush cache explictly before put DDR into retention to make sure
@@ -799,9 +832,8 @@ void imx_pwr_domain_suspend(const psci_power_state_t *target_state)
 			 * so need to request Sentinel to set the correct permission at the early
 			 * begining.
 			 */
-			s401_request_pwrdown();
-
 			nicmix_pwr_down(core_id);
+			s401_request_pwrdown();
 			wakeupmix_pwr_down();
 
 			/* power down PLL */
@@ -841,7 +873,21 @@ void imx_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 		/* Disable OSC power down */
 		mmio_clrbits_32(IMX_GPC_BASE + GPC_GLOBAL_OFFSET + GPC_RCOSC_CTRL, BIT(0));
 		peripheral_qchannel_hsk(false);
-		if (!is_m33_active()) {
+		if (is_m33_active()) {
+			sema42_lock(0);
+
+			mmio_write_32(CCM_ROOT_SLICE(WAKEUP_AXI_ROOT), clock_root[1]);
+			mmio_write_32(CCM_ROOT_SLICE(HSIO_CLK_ROOT), clock_root[2]);
+			mmio_write_32(CCM_ROOT_SLICE(NIC_CLK_ROOT), clock_root[3]);
+
+			if (mmio_read_32(DDR_RETENTION) & DDR_RETENTION_M33_FLAG) {
+				dram_exit_retention();
+			}
+			/* DDR need to keep active as A55 will use it */
+			mmio_clrbits_32(DDR_RETENTION, DDR_RETENTION_A55_FLAG);
+
+			sema42_unlock(0);
+		} else {
 			/* power down PLL */
 			pll_pwr_down(false);
 			nicmix_pwr_up(core_id);
@@ -852,21 +898,10 @@ void imx_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 
 	/* cluster level */
 	if (!is_local_state_run(CLUSTER_PWR_STATE(target_state))) {
-		/* clear DSU cluster power down if cluster power off is aborted by wakeup */
-		/*
-		 * FIXME: has side effect, need to remove below config
-		 * val = read_clusterpwrdn();
-		 * val &= ~(DSU_CLUSTER_PWR_MASK | BIT(1));
-		 * val |= DSU_CLUSTER_PWR_ON;
-		 * write_clusterpwrdn(val);
-		 */ 
- 
 		/* set the cluster's target mode to RUN */
 		mmio_write_32(IMX_GPC_BASE + A55C0_CMC_OFFSET + 0x800 * 2 + CM_MODE_CTRL, CM_MODE_RUN);
 		/* clear L3 retention */
 		mmio_clrbits_32(IMX_SRC_BASE + A55C0_MEM + 0x400 * 3 + 0x4, MEM_LP_RETENTION);
-		/* FIXME:  set S401 clock back */
-		mmio_setbits_32(0x44450200, BIT(9));
 	}
 	/* do core level */
 	if (is_local_state_off(CORE_PWR_STATE(target_state))) {

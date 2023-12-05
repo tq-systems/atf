@@ -44,11 +44,11 @@
 #define PLAT_PHY_ADDR_SPACE_SIZE	(1ull << 32)
 
 #ifdef SPD_trusty
+#define MAX_XLAT_TABLES			11
+#define MAX_MMAP_REGIONS		12
+#else
 #define MAX_XLAT_TABLES			10
 #define MAX_MMAP_REGIONS		11
-#else
-#define MAX_XLAT_TABLES			8
-#define MAX_MMAP_REGIONS		9
 #endif
 
 #define PLAT_GICD_BASE			U(0x2d400000)
@@ -57,6 +57,8 @@
 #define DEVICE0_SIZE			U(0x10000000)
 #define DEVICE1_BASE			U(0x30000000)
 #define DEVICE1_SIZE			U(0x10000000)
+#define DEVICE2_BASE			U(0x8ff00000)
+#define DEVICE2_SIZE			U(0x00001000)
 #define IMX_LPUART4_BASE		U(0x29390000)
 #define IMX_LPUART5_BASE		U(0x293a0000)
 #define IMX_LPUART_BASE			IMX_LPUART5_BASE

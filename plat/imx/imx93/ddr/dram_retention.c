@@ -109,9 +109,24 @@ void check_dfi_init_complete(void)
 void dram_enter_retention(void)
 {
 	uint32_t val;
+	int eccen = 0;
+	uint32_t waitflag = 0;
+
+	eccen = !!(mmio_read_32(REG_ERR_EN) & 0x40000000);
+
+	if(eccen && ((mmio_read_32(REG_DDR_TX_CFG_1) & 0xF) != 0)){
+		mmio_clrbits_32(REG_DDR_TX_CFG_1, 0xF);
+	}
+
+	if(eccen){
+		waitflag = 0xC0000000;
+	}
+	else{
+		waitflag = 0x80000000;
+	}
 
 	/* 2. Polling for DDRDSR_2[IDLE] to be set */
-	check_ddrc_idle(0, 0x80000000);
+	check_ddrc_idle(0, waitflag);
 
 	/* HALT the ddrc axi port */
 	mmio_setbits_32(DDR_SDRAM_CFG, BIT(1));
@@ -135,9 +150,6 @@ void dram_enter_retention(void)
 
 	/* 5. Clear DDR_ZQ_CNTL register */
 	mmio_write_32(DDR_ZQ_CNTL, 0x0);
-
-	/* 6. Set DEBUG_26[DIS_CTRLUPD_REQ */
-	mmio_setbits_32(DEBUG_26, (0x1f << 12));
 
 	/* 7. Force the DDRC to enter self refresh */
 	self_refresh_enter();
@@ -292,9 +304,9 @@ void dram_exit_retention(void)
 
 	/* additional step to make sure DDR exit retenton works */
 	mmio_setbits_32(SRC_DDRC_SW_CTRL, BIT(0));
-	udelay(10000);
+	udelay(10);
 	mmio_clrbits_32(SRC_DDRC_SW_CTRL, BIT(0));
-	udelay(10000);
+	udelay(10);
 
 	/* 2. Cold reset the DDRPHY */
 	ddrphy_coldreset();
@@ -309,6 +321,9 @@ void dram_exit_retention(void)
 
 	/* 5. Reload the ddrc config */
 	ddrc_init(timing_info);
+
+	/* set SR_FAST_WK_EN to 1 by default */
+	mmio_setbits_32(REG_DDR_SDRAM_CFG_3, BIT(1));
 
 	NOTICE("exit retention done\n");
 }

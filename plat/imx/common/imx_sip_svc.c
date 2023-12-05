@@ -91,12 +91,18 @@ static uintptr_t imx_sip_handler(unsigned int smc_fid,
 #endif
 	case  IMX_SIP_BUILDINFO:
 		SMC_RET1(handle, imx_buildinfo_handler(smc_fid, x1, x2, x3, x4));
-#if defined(PLAT_imx93)
+#if defined(PLAT_imx93) || defined(PLAT_imx91p)
 	case IMX_SIP_DDR_DVFS:
 		return dram_dvfs_handler(smc_fid, handle, x1, x2, x3);
 	case IMX_SIP_SRC:
 		SMC_RET1(handle, imx_src_handler(smc_fid, x1, x2, x3, handle));
 		break;
+#endif
+#if defined(PLAT_imx8qm) && defined(SPD_trusty)
+	case IMX_SIP_CONFIGURE_MEM_FOR_VPU:
+		return imx_configure_memory_for_vpu(handle, x1);
+	case IMX_SIP_GET_PARTITION_NUMBER:
+		return imx_get_partition_number(handle);
 #endif
 	default:
 		WARN("Unimplemented i.MX SiP Service Call: 0x%x\n", smc_fid);

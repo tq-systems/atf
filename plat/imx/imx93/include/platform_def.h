@@ -28,10 +28,18 @@
 #define PLAT_MAX_OFF_STATE		U(4)
 #define PLAT_MAX_RET_STATE		U(2)
 
+#ifdef PLAT_imx91p
+#define BL31_BASE			U(0x204C0000)
+#define BL31_LIMIT			U(0x204E0000)
+#define SAVED_DRAM_TIMING_BASE		U(0x2049C000)
+#define IMX_SEPARATE_XLAT_TABLE 1
+#define IMX_SEPARATE_NOBITS_BASE    U(0x204B0000)
+#define IMX_SEPARATE_NOBITS_LIMIT   U(0x204C0000)
+#else
 #define BL31_BASE			U(0x204E0000)
 #define BL31_LIMIT			U(0x20520000)
-
 #define SAVED_DRAM_TIMING_BASE		U(0x2051c000)
+#endif
 
 /* non-secure uboot base */
 /* TODO */
@@ -47,10 +55,10 @@
 
 #ifdef SPD_trusty
 #define MAX_XLAT_TABLES			15
-#define MAX_MMAP_REGIONS		19
+#define MAX_MMAP_REGIONS		20
 #else
 #define MAX_XLAT_TABLES			12
-#define MAX_MMAP_REGIONS		16
+#define MAX_MMAP_REGIONS		17
 #endif
 
 #define IMX_BOOT_UART_CLK_IN_HZ		24000000 /* Select 24MHz oscillator */
@@ -66,6 +74,7 @@
 #define GPIO2_BASE			U(0x43810000)
 #define GPIO3_BASE			U(0x43820000)
 #define GPIO4_BASE			U(0x43830000)
+#define SEMA42_1_BASE			U(0x44260000)
 #define GPIO_BASE			U(0x53810000)
 #define GPIO_SIZE			U(0x30000)
 #define FSB_BASE			U(0x47510000)
@@ -73,6 +82,8 @@
 #define S400_MU_BASE			U(0x47520000)
 #define DDRMIX_BASE			U(0x4E000000)
 #define DDRMIX_SIZE			U(0x400000)
+#define OCRAM_BASE			U(0x20480000)
+#define OCRAM_SIZE			U(0xA0000)
 
 #define TRDC_A_BASE			U(0x44270000)
 #define TRDC_W_BASE			U(0x42460000)

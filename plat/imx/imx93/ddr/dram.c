@@ -242,6 +242,7 @@ static uint64_t waiting_dvfs(uint32_t id, uint32_t flags,
 		/* frequency change done */
 		if (!in_progress)
 			break;
+		wfe();
 	}
 
 	return 0;
@@ -267,6 +268,9 @@ void dram_info_init(unsigned long dram_timing_base)
 	/* no valid fsp table, return directly */
 	if (i == 0)
 		return;
+
+	/* set SR_FAST_WK_EN to 1 by default */
+	mmio_setbits_32(REG_DDR_SDRAM_CFG_3, BIT(1));
 
 	/* Register the EL3 handler for DDR DVFS */
 	set_interrupt_rm_flag(flags, NON_SECURE);
@@ -330,6 +334,7 @@ int dram_dvfs_handler(uint32_t smc_fid, void *handle,
 	in_progress = false;
 	core_count = 0;
 	dsb();
+	sev();
 	isb();
 
 	SMC_RET1(handle, ret);
