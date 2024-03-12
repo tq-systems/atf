@@ -53,8 +53,6 @@
 
 #ifdef IMX_EMU
 #define IMX_LPUART_BASE			0x42570000
-#else
-#define IMX_LPUART_BASE			0x44380000
 #endif
 
 #define IMX_BOOT_UART_CLK_IN_HZ		24000000 /* Select 24MHz oscillator */
@@ -71,6 +69,15 @@
 #define GPIO3_BASE			U(0x43820000)
 #define GPIO4_BASE			U(0x43840000)
 #define GPIO5_BASE			U(0x43850000)
+
+#define LPUART1_BASE			U(0x44380000)
+#define LPUART2_BASE			U(0x44390000)
+#define LPUART3_BASE			U(0x42570000)
+#define LPUART4_BASE			U(0x42580000)
+#define LPUART5_BASE			U(0x42590000)
+#define LPUART6_BASE			U(0x425a0000)
+#define LPUART7_BASE			U(0x42690000)
+#define LPUART8_BASE			U(0x426a0000)
 
 #define CCM_BASE			U(0x44450000)
 #define SRC_BASE			U(0x44460000)
