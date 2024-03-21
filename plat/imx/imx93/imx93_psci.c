@@ -152,6 +152,9 @@ enum ccm_clock_root {
 };
 
 enum ccm_lpcg {
+	WDOG3_LPCG = 14,
+	WDOG4_LPCG = 15,
+	WDOG5_LPCG = 16,
 	MUB_LPCG = 20,
 	GPIO1_LPCG = 34,
 	GPIO2_LPCG = 35,
@@ -191,7 +194,21 @@ struct plat_gic_ctx imx_gicv3_ctx;
 static uintptr_t secure_entrypoint;
 
 static bool boot_stage = true;
-static bool no_wakeup_enabled = true;
+
+/*
+ * GPC IRQ mask used to check if any the below interrupt is enabled
+ * as wakeup source;
+ *
+ * lpuart3-6: 68-70,flexcan2: 51, usdhc1: 86, usdhc2: 87; fec: 181,
+ * eqos: 183, usdhc3: 205, lpuart7: 210, lpaurt:211.
+ */
+static uint32_t wakeupmix_irq_mask[] = {
+	0x0, 0x80000, 0xC00000, 0xF0,
+	0x0, 0xA00000, 0xC2000, 0x0,
+	0x0
+};
+static bool gpio_wakeup;
+static bool has_wakeup_irq;
 
 static uint32_t gpio_ctrl_offset[GPIO_CTRL_REG_NUM] = { 0xc, 0x10, 0x14, 0x18, 0x1c, 0x40, 0x54, 0x58 };
 static struct gpio_ctx wakeupmix_gpio_ctx[3] = {
@@ -201,6 +218,8 @@ static struct gpio_ctx wakeupmix_gpio_ctx[3] = {
 };
 
 static uint32_t clock_root[6];
+/* context save/restore for wdog3-5 in wakeupmix */
+static uint32_t wdog_val[3][2];
 
 /*
  * Empty implementation of these hooks avoid setting the GICR_WAKER.Sleep bit
@@ -446,10 +465,22 @@ void imx_set_sys_wakeup(unsigned int last_core, bool pdn)
 		if (pdn) {
 			/* set the wakeup irq base GIC */
 			irq_mask = ~gicd_read_isenabler(gicd_base, 32 * (i + 1));
+			/* IRQ220 controlled by IMR6 should be enabled in system sleep mode */
+			if (i == 6U) {
+				irq_mask &= ~(1 << 28);
+			}
 		} else {
 			irq_mask = 0xFFFFFFFF;
 		}
 
+		/*
+		 * if any of the non gpio is enabled, that means wakeupmix
+		 * should be keep on to make sure these irqs can wakeup system
+		 * successfully.
+		 */
+		if (irq_mask & wakeupmix_irq_mask[i]) {
+			has_wakeup_irq = true;
+		}
 		/* set the mask into core & cluster GPC IMR */
 		mmio_write_32(IMX_GPC_BASE + A55C0_CMC_OFFSET + 0x800 * 2 + 0x100 + 0x4 * i, irq_mask);
 		mmio_write_32(IMX_GPC_BASE + A55C0_CMC_OFFSET + 0x800 * last_core + 0x100 + 0x4 * i, irq_mask);
@@ -572,7 +603,7 @@ void gpio_save(struct gpio_ctx *ctx, int port_num)
 
 			/* check if any gpio irq is enabled as wakeup source */
 			if (ctx->gpio_icr[j]) {
-				no_wakeup_enabled = false;
+				gpio_wakeup = true;
 			}
 		}
 
@@ -611,10 +642,58 @@ void gpio_restore(struct gpio_ctx *ctx, int port_num)
 	set_gpio_secure(false);
 }
 
+void wdog_save(uintptr_t base, uint32_t index)
+{
+	/* enable wdog clock */
+	mmio_write_32(LPCG(WDOG3_LPCG + index), 0x1);
+
+	/* save the CS & TOVAL regiter */
+	wdog_val[index][0] = mmio_read_32(base);
+	wdog_val[index][1] = mmio_read_32(base + 0x8);
+
+	mmio_write_32(LPCG(WDOG3_LPCG + index), 0x0);
+}
+
+void wdog_restore(uintptr_t base, uint32_t index)
+{
+	uint32_t cs, toval;
+
+	/* enable wdog clock */
+	mmio_write_32(LPCG(WDOG3_LPCG + index), 0x1);
+
+	cs = mmio_read_32(base);
+	toval = mmio_read_32(base + 0x8);
+
+	if (cs == wdog_val[index][0] &&
+	    toval == wdog_val[index][1]) {
+		return;
+	}
+
+	/* reconfig the CS */
+	mmio_write_32(base, wdog_val[index][0]);
+	/* set the tiemout value */
+	mmio_write_32(base + 0x8, wdog_val[index][1]);
+
+	/* wait for the lock status */
+	while((mmio_read_32(base) & BIT(11))) {
+		;
+	}
+
+	/* wait for the config done */
+	while(!(mmio_read_32(base) & BIT(10))) {
+		;
+	}
+
+	mmio_write_32(LPCG(WDOG3_LPCG + index), 0x0);
+}
+
 void wakeupmix_pwr_down(void)
 {
+	wdog_save(WDOG3_BASE, 0);
+	wdog_save(WDOG4_BASE, 1);
+	wdog_save(WDOG5_BASE, 2);
 	gpio_save(wakeupmix_gpio_ctx, 3);
-	if (no_wakeup_enabled) {
+	if (!(gpio_wakeup || has_wakeup_irq)) {
 		/* m33 root need to switch to 24M OSC when wakeupmix power down */
 		clock_root[0] = mmio_read_32(CCM_ROOT_SLICE(M33_ROOT));
 		mmio_clrbits_32(CCM_ROOT_SLICE(M33_ROOT), ROOT_MUX_MASK);
@@ -631,7 +710,7 @@ void wakeupmix_pwr_down(void)
 
 void wakeupmix_pwr_up(void)
 {
-	if (no_wakeup_enabled) {
+	if (!(gpio_wakeup || has_wakeup_irq)) {
 		mmio_setbits_32(CCM_ROOT_SLICE(M33_ROOT), clock_root[0] & ROOT_MUX_MASK);
 		/* keep wakeupmix on when exit from system suspend */
 		mmio_write_32(IMX_SRC_BASE + 0xc00 + 0x14, BIT(12) | BIT(13));
@@ -639,13 +718,17 @@ void wakeupmix_pwr_up(void)
 		trdc_w_reinit();
 		wakeupmix_qos_init();
 		gpio_restore(wakeupmix_gpio_ctx, 3);
+		wdog_restore(WDOG3_BASE, 0);
+		wdog_restore(WDOG4_BASE, 1);
+		wdog_restore(WDOG5_BASE, 2);
 	}
 
 	/*
-	 * after wakeup, revert back to ‘true‘, so next time
+	 * after wakeup, revert back to ‘false‘, so next time
 	 * evaluation for wakeupmix on/off can work well.
 	 */
-	no_wakeup_enabled = true;
+	has_wakeup_irq = false;
+	gpio_wakeup = false;
 }
 
 int imx_validate_ns_entrypoint(uintptr_t ns_entrypoint)
@@ -726,7 +809,7 @@ void imx_pwr_domain_on_finish(const psci_power_state_t *target_state)
 	/* switch to GIC wakeup source */
 	mmio_setbits_32(IMX_GPC_BASE + A55C0_CMC_OFFSET + 0x800 * core_id + CM_MISC, IRQ_MUX);
 
-	if (boot_stage) { 
+	if (boot_stage) {
 		/* SRC MIX & MEM slice config for cores */
 		/* MEM LPM */
 		mmio_setbits_32(IMX_SRC_BASE + A55C0_MEM + 0x400 * core_id + 0x4, MEM_LP_EN);

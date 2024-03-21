@@ -22,30 +22,23 @@
 #include <imx8_lpuart.h>
 #include <platform_def.h>
 #include <plat_imx8.h>
-#include <trdc.h>
-#include <dram.h>
+
+#include <drivers/arm/gicv3.h>
+#include "../drivers/arm/gic/v3/gicv3_private.h"
 
 #define TRUSTY_PARAMS_LEN_BYTES      (4096*2)
 
+extern void imx9_init_scmi_server();
+
 static const mmap_region_t imx_mmap[] = {
-	/* APIS2 mapping */
-	MAP_REGION_FLAT(AIPS2_BASE, AIPSx_SIZE, MT_DEVICE | MT_RW | MT_NS),
-	MAP_REGION_FLAT(AIPS3_BASE, AIPSx_SIZE, MT_DEVICE | MT_RW | MT_NS),
-	MAP_REGION_FLAT(AIPS1_BASE, AIPSx_SIZE, MT_DEVICE | MT_RW), /* ECO fix , secure can access nonsecure */
-	/* AIPS4 */
-	MAP_REGION_FLAT(AIPS4_BASE, AIPSx_SIZE, MT_DEVICE | MT_RW | MT_NS),
-
-	MAP_REGION_FLAT(PLAT_GICD_BASE, 0x200000, MT_DEVICE | MT_RW), /* ECO fix, secure can access nonsecure */
-
-	MAP_REGION_FLAT(TRDC_A_BASE, TRDC_x_SISE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(TRDC_W_BASE, TRDC_x_SISE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(TRDC_M_BASE, TRDC_x_SISE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(TRDC_N_BASE, TRDC_x_SISE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(FSB_BASE, 0x10000, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(S400_MU_BASE, 0x10000, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(DDRMIX_BASE, DDRMIX_SIZE, MT_DEVICE | MT_RW | MT_NS),
-	MAP_REGION_FLAT(GPIO_BASE, GPIO_SIZE, MT_DEVICE | MT_RW),
-	MAP_REGION_FLAT(NIC_MAIN_GPV_BASE, 0x200000, MT_DEVICE | MT_RW),
+	/* APIS2 mapping  */
+	MAP_REGION_FLAT(AIPS2_BASE, AIPSx_SIZE, MT_DEVICE | MT_RW),
+	MAP_REGION_FLAT(PLAT_GICD_BASE, 0x200000, MT_DEVICE | MT_RW),
+	MAP_REGION_FLAT(AIPS1_BASE, AIPSx_SIZE, MT_DEVICE | MT_RW),
+	/* GPIO2-5 */
+	MAP_REGION_FLAT(GPIO2_BASE, 0x20000, MT_DEVICE | MT_RW),
+	MAP_REGION_FLAT(GPIO4_BASE, 0x20000, MT_DEVICE | MT_RW),
+	MAP_REGION_FLAT(ELE_MU_BASE, 0x10000, MT_DEVICE | MT_RW),
 
 	{0},
 };
@@ -78,12 +71,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	console_lpuart_register(IMX_LPUART_BASE, IMX_BOOT_UART_CLK_IN_HZ,
 		     IMX_CONSOLE_BAUDRATE, &console);
 
-#if DEBUG
-	console_set_scope(&console, CONSOLE_FLAG_BOOT | CONSOLE_FLAG_RUNTIME);
-#else
 	/* This console is only used for boot stage */
-	console_set_scope(&console, CONSOLE_FLAG_BOOT);
-#endif
+	console_set_scope(&console, CONSOLE_FLAG_BOOT | CONSOLE_FLAG_RUNTIME);
 
 	/*
 	 * tell BL3-1 where the non-secure software image is located
@@ -93,7 +82,7 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	bl33_image_ep_info.spsr = get_spsr_for_bl33_entry();
 	SET_SECURITY_STATE(bl33_image_ep_info.h.attr, NON_SECURE);
 
-#if defined(SPD_opteed) || defined(SPD_trusty)
+#ifdef SPD_trusty
 	/* Populate entry point information for BL32 */
 	SET_PARAM_HEAD(&bl32_image_ep_info, PARAM_EP, VERSION_1, 0);
 	SET_SECURITY_STATE(bl32_image_ep_info.h.attr, SECURE);
@@ -104,15 +93,8 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 	bl33_image_ep_info.args.arg1 = BL32_BASE;
 	bl33_image_ep_info.args.arg2 = BL32_SIZE;
 
-#ifdef SPD_trusty
 	bl32_image_ep_info.args.arg0 = BL32_SIZE;
 	bl32_image_ep_info.args.arg1 = BL32_BASE;
-#else
-	/* Make sure memory is clean */
-	mmio_write_32(BL32_FDT_OVERLAY_ADDR, 0);
-	bl33_image_ep_info.args.arg3 = BL32_FDT_OVERLAY_ADDR;
-	bl32_image_ep_info.args.arg3 = BL32_FDT_OVERLAY_ADDR;
-#endif
 #endif
 }
 
@@ -134,13 +116,11 @@ void bl31_plat_arch_setup(void)
 	mmio_write_32(GPIO4_BASE + 0x18, 0xffffffff);
 	mmio_write_32(GPIO4_BASE + 0x1c, 0x3);
 
-	mmio_write_32(GPIO1_BASE + 0x10, 0xffffffff);
-	mmio_write_32(GPIO1_BASE + 0x14, 0x3);
-	mmio_write_32(GPIO1_BASE + 0x18, 0xffffffff);
-	mmio_write_32(GPIO1_BASE + 0x1c, 0x3);
+	mmio_write_32(GPIO5_BASE + 0x10, 0xffffffff);
+	mmio_write_32(GPIO5_BASE + 0x14, 0x3);
+	mmio_write_32(GPIO5_BASE + 0x18, 0xffffffff);
+	mmio_write_32(GPIO5_BASE + 0x1c, 0x3);
 
-	mmap_add_region(OCRAM_BASE, OCRAM_BASE, OCRAM_SIZE,
-		MT_MEMORY | MT_RW | MT_SECURE);
 	mmap_add_region(BL31_BASE, BL31_BASE, (BL31_LIMIT - BL31_BASE),
 		MT_MEMORY | MT_RW | MT_SECURE);
 	mmap_add_region(BL_CODE_BASE, BL_CODE_BASE, (BL_CODE_END - BL_CODE_BASE),
@@ -155,41 +135,41 @@ void bl31_plat_arch_setup(void)
 	init_xlat_tables();
 
 	enable_mmu_el3(0);
-
-	trdc_config();
 }
 
 void bl31_platform_setup(void)
 {
+	uint32_t gicr_ctlr;
+	uintptr_t gicr_base;
+	int i;
+
 	generic_delay_timer_init();
+
+	plat_gic_driver_init();
+	/* Ensure to mark the core as asleep, required for reset case. */
+	plat_gic_cpuif_disable();
+	/* Clear LPIs */
+	for (i = 0; i < PLATFORM_CORE_COUNT; i++) {
+		gicr_base = gicv3_driver_data->rdistif_base_addrs[i];
+		gicr_ctlr = gicr_read_ctlr(gicr_base);
+		gicr_write_ctlr(gicr_base, gicr_ctlr & ~(GICR_CTLR_EN_LPIS_BIT));
+	}
+	plat_gic_init();
 
 	/* get soc info */
 	ele_get_soc_info();
 
-	/* Init the dram info */
-	dram_info_init(SAVED_DRAM_TIMING_BASE);
-
-	plat_gic_driver_init();
-	plat_gic_init();
+	extern void plat_imx95_setup(void);
+	plat_imx95_setup();
 }
-
-void bl31_plat_runtime_setup(void)
-{
-	console_switch_state(CONSOLE_FLAG_RUNTIME);
-
-	return;
-}
-
 
 entry_point_info_t *bl31_plat_get_next_image_ep_info(unsigned int type)
 {
-	if (type == NON_SECURE) {
+	if (type == NON_SECURE)
 		return &bl33_image_ep_info;
-	}
 
-	if (type == SECURE) {
+	if (type == SECURE)
 		return &bl32_image_ep_info;
-	}
 
 	return NULL;
 }
