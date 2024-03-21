@@ -123,6 +123,9 @@ void bl31_main(void)
 {
 	NOTICE("BL31: %s\n", version_string);
 	NOTICE("BL31: %s\n", build_message);
+#if DEBUG
+	NOTICE("BL31: DEBUG enabled\n");
+#endif
 
 #if FEATURE_DETECTION
 	/* Detect if features enabled during compilation are supported by PE. */
