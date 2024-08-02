@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
  * Copyright 2018-2021 NXP
- * Copyright (c) 2023 TQ-Systems GmbH <oss@tq-group.com>, D-82229 Seefeld, Germany.
- * Author: Gregor Herburger
  *
+ * Copyright (c) 2023 TQ-Systems GmbH <oss@ew.tq-group.com>, D-82229 Seefeld, Germany.
+ * Author: Gregor Herburger
  */
 
 #ifndef POLICY_H

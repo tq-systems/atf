@@ -1,6 +1,9 @@
 /*
  * Copyright 2021 NXP
  *
+ * Copyright (c) 2023 TQ-Systems GmbH <oss@ew.tq-group.com>, D-82229 Seefeld, Germany.
+ * Author: Gregor Herburger
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
