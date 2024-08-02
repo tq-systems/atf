@@ -1,10 +1,13 @@
 #
 # Copyright 2018 NXP
+# Author Ruchika Gupta <ruchika.gupta@nxp.com>,
+# Pankaj Gupta <pankaj.gupta@nxp.com>
+#
+# Copyright (c) 2022 TQ-Systems GmbH <oss@ew.tq-group.com>, D-82229 Seefeld, Germany.
+# Author: Gregor Herburger
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# Author Ruchika Gupta <ruchika.gupta@nxp.com>
-#	Pankaj Gupta <pankaj.gupta@nxp.com>
 
 # board-specific build parameters
 BOOT_MODE	:= 	flexspi_nor

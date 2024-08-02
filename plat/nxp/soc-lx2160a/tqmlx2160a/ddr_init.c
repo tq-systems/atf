@@ -1,11 +1,11 @@
 /*
  * Copyright 2018 NXP
- * Copyright 2020-2022 TQ-Systems GmbH
+ * Author York Sun <york.sun@nxp.com>
+ *
+ * Copyright (c) 2020-2022 TQ-Systems GmbH <oss@ew.tq-group.com>, D-82229 Seefeld, Germany.
+ * Author: Gregor Herburger
  *
  * SPDX-License-Identifier: BSD-3-Clause
- *
- * Author York Sun <york.sun@nxp.com>
- * Author Gregor Herburger <gregor.herburger@tq-group.com>
  */
 
 #include <assert.h>
