@@ -38,10 +38,6 @@ IMPORT_SYM(unsigned long, __RW_START__, BL31_RW_START);
 IMPORT_SYM(unsigned long, __DATA_START__, BL31_DATA_START);
 IMPORT_SYM(unsigned long, __DATA_END__, BL31_DATA_END);
 
-#if DEBUG_CONSOLE
-extern unsigned long console_list;
-#endif
-
 static entry_point_info_t bl32_image_ep_info;
 static entry_point_info_t bl33_image_ep_info;
 
