@@ -449,6 +449,12 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
 #if DEBUG_CONSOLE
 	console_lpuart_register(IMX_BOOT_UART_BASE, IMX_BOOT_UART_CLK_IN_HZ,
 		     IMX_CONSOLE_BAUDRATE, &console);
+#if DEBUG
+	console_set_scope(&console, CONSOLE_FLAG_BOOT | CONSOLE_FLAG_RUNTIME);
+#else
+	/* This console is only used for boot stage */
+	console_set_scope(&console, CONSOLE_FLAG_BOOT);
+#endif
 #endif
 	/* Turn on MU1 for non-secure OS/Hypervisor */
 	sc_pm_set_resource_power_mode(ipc_handle, SC_R_MU_1A, SC_PM_PW_MODE_ON);
