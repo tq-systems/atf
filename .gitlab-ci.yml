@@ -1,0 +1,75 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+
+image: "vgitlab01.tq-net.de:5005/tq-embedded/tqmaxx/toolchain-tqmaxx/bare:ubuntu-22.04"
+
+variables:
+  CROSS_COMPILE: "/opt/OSELAS.Toolchain-2023.07.1/aarch64-v8a-linux-gnu/gcc-13.2.1-clang-16.0.6-glibc-2.37-binutils-2.40-kernel-6.3.6-sanitized/bin/aarch64-v8a-linux-gnu-"
+
+stages:
+  - checkpatch
+  - build
+
+checkpatch:
+  tags:
+    - docker
+    - tqmaxx
+  stage: checkpatch
+  before_script:
+    - echo "Get checkpatch.pl from kernel.org"
+    - wget https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/scripts/spelling.txt
+    - wget https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/scripts/const_structs.checkpatch
+    - wget https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/scripts/checkpatch.pl
+    - chmod +x ./checkpatch.pl
+  script:
+    - echo "Run checkpatch commit range ${CI_MERGE_REQUEST_DIFF_BASE_SHA}..${CI_COMMIT_SHA}"
+    - make BASE_COMMIT=${CI_MERGE_REQUEST_DIFF_BASE_SHA} CHECKPATCH=./checkpatch.pl checkpatch
+  allow_failure: true
+  interruptible: true
+
+compile:
+  tags:
+    - docker
+    - tqmaxx
+  stage: build
+  parallel:
+    matrix:
+      - PLAT: [ imx8mm, imx8mn ]
+        CONFIG: [ "DEBUG=1", "DEBUG=0" ]
+        TARGET:
+        - "IMX_BOOT_UART_BASE=0x30880000 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_BOOT_UART_BASE=0x30880000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [ imx8mp ]
+        CONFIG: [ "DEBUG=1", "DEBUG=0" ]
+        TARGET:
+        - "IMX_BOOT_UART_BASE=0x30a60000 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_BOOT_UART_BASE=0x30a60000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [ "imx8mq" ]
+        CONFIG: [ "DEBUG=0" ]
+        TARGET:
+        - "IMX_BOOT_UART_BASE=0x30880000 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_BOOT_UART_BASE=0x30880000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [ imx8qm ]
+        CONFIG: [ "DEBUG=1 DEBUG_CONSOLE=1", "DEBUG=0", "DEBUG=0 DEBUG_CONSOLE=1" ]
+        TARGET:
+        - "IMX_DEBUG_UART=0 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_DEBUG_UART=0 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [ imx8qx ]
+        CONFIG: [ "DEBUG=1 DEBUG_CONSOLE=1", "DEBUG=0", "DEBUG=0 DEBUG_CONSOLE=1" ]
+        TARGET:
+        - "IMX_DEBUG_UART=1 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_DEBUG_UART=1 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [ imx91, imx93, imx95 ]
+        CONFIG: [ "DEBUG=1", "DEBUG=0" ]
+        TARGET:
+        - "IMX_LPUART_BASE=0x44380000 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_LPUART_BASE=0x42690000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+  script:
+    - echo "Building ${PLAT} with ${CONFIG}"
+    - make -j$(nproc) CROSS_COMPILE=${CROSS_COMPILE} PLAT=${PLAT} ${CONFIG} ${TARGET}
+  interruptible: true
+  artifacts:
+    when: on_success
+    paths:
+      - "./${PLAT}-build-*/**/bl31.bin"
