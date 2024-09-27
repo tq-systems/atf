@@ -59,6 +59,7 @@
 	{.base = (addr), .pin_num = (num), }
 
 enum ccm_clock_root {
+	M33_ROOT = 3,
 	WAKEUP_AXI_ROOT = 7,
 	CAN1_ROOT = 23,
 	CAN2_ROOT = 24,
@@ -126,9 +127,8 @@ static bool boot_stage = true;
  * eqos: 183, usdhc3: 205, lpuart7: 210, lpaurt:211.
  */
 static uint32_t wakeupmix_irq_mask[] = {
-	0x0, 0x80000, 0xC00000, 0xF0,
+	0x0, 0x80000, 0xC000F0, 0x0,
 	0x0, 0xA00000, 0xC2000, 0x0,
-	0x0
 };
 static bool gpio_wakeup;
 static bool has_wakeup_irq;
@@ -315,7 +315,7 @@ void imx_set_sys_wakeup(unsigned int last_core, bool pdn)
 		 * should be keep on to make sure these irqs can wakeup system
 		 * successfully.
 		 */
-		if (irq_mask & wakeupmix_irq_mask[i]) {
+		if (~irq_mask & wakeupmix_irq_mask[i]) {
 			has_wakeup_irq = true;
 		}
 		/* set the mask into core & cluster GPC IMR */
@@ -532,6 +532,9 @@ void wakeupmix_pwr_down(void)
 	wdog_save(WDOG5_BASE, 2);
 	gpio_save(wakeupmix_gpio_ctx, 3);
 	if (!(gpio_wakeup || has_wakeup_irq)) {
+		clock_root[0] = mmio_read_32(CCM_ROOT_SLICE(M33_ROOT));
+		mmio_clrbits_32(CCM_ROOT_SLICE(M33_ROOT), ROOT_MUX_MASK);
+
 		/* wakeup mix controlled by A55 cluster power down: domain3 only */
 		src_mix_set_lpm(SRC_WKUP, 0x3, CM_MODE_WAIT);
 		src_authen_config(SRC_WKUP, 0x8, 0x1);
@@ -545,6 +548,7 @@ void wakeupmix_pwr_down(void)
 void wakeupmix_pwr_up(void)
 {
 	if (!(gpio_wakeup || has_wakeup_irq)) {
+		mmio_setbits_32(CCM_ROOT_SLICE(M33_ROOT), clock_root[0] & ROOT_MUX_MASK);
 		/* keep wakeupmix on when exit from system suspend */
 		src_mix_set_lpm(SRC_WKUP, 0x3, CM_MODE_SUSPEND);
 		mmio_clrbits_32(SRC_BASE + 0xc00 + 0x4, BIT(2));

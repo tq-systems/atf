@@ -137,9 +137,8 @@ static bool boot_stage = true;
  * eqos: 183, usdhc3: 205, lpuart7: 210, lpaurt:211.
  */
 static uint32_t wakeupmix_irq_mask[] = {
-	0x0, 0x80000, 0xC00000, 0xF0,
+	0x0, 0x80000, 0xC000F0, 0x0,
 	0x0, 0xA00000, 0xC2000, 0x0,
-	0x0
 };
 static bool gpio_wakeup;
 static bool has_wakeup_irq;
@@ -342,7 +341,7 @@ void imx_set_sys_wakeup(unsigned int last_core, bool pdn)
 		 * should be keep on to make sure these irqs can wakeup system
 		 * successfully.
 		 */
-		if (irq_mask & wakeupmix_irq_mask[i]) {
+		if (~irq_mask & wakeupmix_irq_mask[i]) {
 			has_wakeup_irq = true;
 		}
 		/* set the mask into core & cluster GPC IMR */
@@ -565,7 +564,16 @@ void wakeupmix_pwr_down(void)
 
 		/* wakeup mix controlled by A55 cluster power down: domain3 only */
 		src_mix_set_lpm(SRC_WKUP, 0x3, CM_MODE_WAIT);
-		src_authen_config(SRC_WKUP, 0x8, 0x1);
+
+		/*
+		 * Keep wakeupmix voted by m33 lpm if m33 is enabled as m33 may
+		 * use resource from the it.
+		 */
+		if (is_m33_disabled()) {
+			src_authen_config(SRC_WKUP, 0x8, 0x1);
+		} else {
+			src_authen_config(SRC_WKUP, 0xc, 0x1);
+		}
 		/* wakeupmix mem off */
 		src_mem_lpm_en(SRC_WKUP_MEM, MEM_OFF);
 		/* enable the handshake between sentinel & wakeupmix */

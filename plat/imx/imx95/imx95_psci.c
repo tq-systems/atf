@@ -91,7 +91,20 @@
 #define SYSCTR_ACTIVE		BIT(2)
 #define PMIC_STBY_INACTIVE	BIT(3)
 #define OSC24M_ACTIVE		BIT(4)
-#define DRAM_ACTIVE_MASK	BIT(5)
+
+/*
+sleep_mode[3:0] – Currently unused.
+sleep_mode[7:4] – sleep mode performance level
+*/
+#define SM_PERF_LVL_PRK	U(0)
+#define SM_PERF_LVL_LOW	U(1)
+#define SM_PERF_LVL_NOM	U(2)
+#define SM_PERF_LVL_ODV	U(3)
+#define SM_PERF_LVL_SOD	U(4)
+
+#define SYS_SLEEP_MODE_L(x)	(((x) & 0xF) << 16U)
+#define SYS_SLEEP_MODE_H(x)	(((x) & 0xF) << 20U)
+#define SYS_SLEEP_FLAGS(x)	(((x) & 0xFFFFU))
 
 #define GPIO_S_BASE(x)		((x) | BIT(28))
 #define GPIO_CTRL_REG_NUM	U(8)
@@ -216,6 +229,9 @@ struct gpio_ctx {
 	GPIO_CTX(GPIO5_BASE,  18),
 };
 
+/* context save/restore for wdog3-4 in wakeupmix */
+static uint32_t wdog_val[2][2];
+
 static inline void is_wakeup_source(unsigned int gic_irq_mask, uint32_t idx)
 {
 	for (uint32_t i = 0; i < ARRAY_SIZE(hsk_config); i++) {
@@ -325,6 +341,41 @@ void gpio_restore(struct gpio_ctx *ctx, int port_num)
 	}
 
 	gpio_wakeup = false;
+}
+
+void wdog_save(uintptr_t base, uint32_t index)
+{
+	/* save the CS & TOVAL regiter */
+	wdog_val[index][0] = mmio_read_32(base);
+	wdog_val[index][1] = mmio_read_32(base + 0x8);
+}
+
+void wdog_restore(uintptr_t base, uint32_t index)
+{
+	uint32_t cs, toval;
+
+	cs = mmio_read_32(base);
+	toval = mmio_read_32(base + 0x8);
+
+	if (cs == wdog_val[index][0] &&
+	    toval == wdog_val[index][1]) {
+		return;
+	}
+
+	/* reconfig the CS */
+	mmio_write_32(base, wdog_val[index][0]);
+	/* set the tiemout value */
+	mmio_write_32(base + 0x8, wdog_val[index][1]);
+
+	/* wait for the lock status */
+	while((mmio_read_32(base) & BIT(11))) {
+		;
+	}
+
+	/* wait for the config done */
+	while(!(mmio_read_32(base) & BIT(10))) {
+		;
+	}
 }
 
 void imx_set_sys_wakeup(uint32_t last_core, bool pdn)
@@ -560,6 +611,8 @@ void imx_pwr_domain_suspend(const psci_power_state_t *target_state)
 	if (is_local_state_off(SYSTEM_PWR_STATE(target_state))) {
 		nocmix_pwr_down(core_id);
 		gpio_save(wakeupmix_gpio_ctx, 4);
+		wdog_save(WDOG3_BASE, 0U);
+		wdog_save(WDOG4_BASE, 1U);
 		keep_wakupmix_on = (gpio_wakeup || has_wakeup_irq);
 		/*
 		 * Setup NOC and WAKEUP MIX to power down when Linux suspends.
@@ -592,7 +645,7 @@ void imx_pwr_domain_suspend(const psci_power_state_t *target_state)
 
 		sys_mode = SCMI_IMX_SYS_POWER_STATE_MODE_MASK;
 		if (has_netc_irq) {
-			sys_mode |= OSC24M_ACTIVE;
+			sys_mode |= SYS_SLEEP_MODE_H(SM_PERF_LVL_LOW);
 			scmi_sys_pwr_state_set(imx95_scmi_handle,
 					       SCMI_SYS_PWR_FORCEFUL_REQ,
 					       sys_mode);
@@ -617,6 +670,8 @@ void imx_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 		}
 		nocmix_pwr_up(core_id);
 		gpio_restore(wakeupmix_gpio_ctx, 4);
+		wdog_restore(WDOG3_BASE, 0U);
+		wdog_restore(WDOG4_BASE, 1U);
 		struct scmi_lpm_config cpu_lpm_cfg[] = {
 			{
 				cpu_info[IMX95_A55P_IDX].cpu_pd_id,
