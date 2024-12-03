@@ -27,22 +27,37 @@ uint8_t plat_scmi_sensor_max_requests(unsigned int agent_id __unused)
 	return 1U;
 }
 
+struct scmi_sensor_val {
+	uint32_t value_low;
+	uint32_t value_high;
+	uint32_t timestap_low;
+	uint32_t timestap_high;
+};
+
 extern int upower_read_temperature(uint32_t sensor_id, int32_t *temperature);
 int plat_scmi_sensor_reading_get(uint32_t agent_id __unused, uint16_t sensor_id __unused,
-				 uint32_t *val)
+				 struct scmi_sensor_val *val __unused)
 {
 	int32_t temperature;
+	uint64_t temp;
 	int ret;
 
 	ret = upower_read_temperature(1, &temperature);
 	if (ret) {
-		val[0] = 0xFFFFFFFF;
-	} else
-		val[0] = temperature;
+		val->value_low = 0xFFFFFFFF;
 
-	val[1] = 0;
-	val[2] = 0;
-	val[3] = 0;
+		if (ret == UPWR_REQ_BUSY)
+			return -EBUSY;
+		else
+			return -EINVAL;
+	} else {
+		temp = (uint64_t)temperature;
+		val->value_high = (uint32_t)((temp >> 32) & 0xFFFFFFFF);
+		val->value_low = (uint32_t)(temp & 0xFFFFFFFF);
+	}
+
+	val->timestap_high = 0;
+	val->timestap_low = 0;
 
 	return 0;
 }

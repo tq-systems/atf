@@ -28,6 +28,10 @@
 #include <drivers/arm/tzc380.h>
 #endif
 
+#if TRUSTY_SPM
+void trusty_shared_mem_init(const uuid_t *trusty_uuid);
+#endif
+
 /* Trusty UID: RFC-4122 compliant UUID version 4 */
 DEFINE_SVC_UUID2(trusty_uuid,
 		 0x40ee25f0, 0xa2bc, 0x304c, 0x8c, 0x4c,
@@ -322,7 +326,12 @@ static int32_t trusty_init(void)
 	ep_info = bl31_plat_get_next_image_ep_info(SECURE);
 	assert(ep_info != NULL);
 
-	fpregs_context_save(get_fpregs_ctx(cm_get_context(NON_SECURE)));
+	/*
+	 * The fp registers were not saved here because they are not used yet
+	 * and should be "zeros". The "TFP" bit status also stops us accessing
+	 * the fp registers.
+	 * See commit "trusty: delete the fp registers save&restore at init stage".
+	 */
 	cm_el1_sysregs_context_save(NON_SECURE);
 
 	cm_set_context(&ctx->cpu_ctx, SECURE);
@@ -339,7 +348,9 @@ static int32_t trusty_init(void)
 	}
 
 	cm_el1_sysregs_context_restore(SECURE);
-	fpregs_context_restore(get_fpregs_ctx(cm_get_context(SECURE)));
+	/*
+	 * Skip fp registers restore as they are not used yet.
+	 */
 	cm_set_next_eret_context(SECURE);
 
 	ctx->saved_security_state = ~0U; /* initial saved state is invalid */
@@ -348,6 +359,10 @@ static int32_t trusty_init(void)
 	(void)trusty_context_switch_helper(&ctx->saved_sp, &zero_args);
 
 	cm_el1_sysregs_context_restore(NON_SECURE);
+	/*
+	 * We can touch fp registers now, restore them to avoid leaking
+	 * TEE fp registers to non-secure world.
+	 */
 	fpregs_context_restore(get_fpregs_ctx(cm_get_context(NON_SECURE)));
 	cm_set_next_eret_context(NON_SECURE);
 
@@ -501,6 +516,10 @@ static int32_t trusty_setup(void)
 	if (ret != 0) {
 		VERBOSE("trusty: failed to register fiq handler, ret = %d\n", ret);
 	}
+
+#if TRUSTY_SPM
+	trusty_shared_mem_init(&trusty_uuid);
+#endif
 
 	if (aarch32) {
 		entry_point_info_t *ns_ep_info;

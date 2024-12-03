@@ -39,7 +39,7 @@ uint32_t plat_scmi_sensor_reg(unsigned int agent_id __unused, unsigned int *addr
 }
 
 int32_t plat_scmi_sensor_reading_get(uint32_t agent_id __unused, uint16_t sensor_id __unused,
-				     uint32_t *val __unused)
+				     struct scmi_sensor_val *val __unused)
 {
 	return 0;
 }
@@ -95,7 +95,7 @@ static void report_attributes(struct scmi_msg *msg)
 	}
 
 	return_values.num_sensors = plat_scmi_sensor_count(msg->agent_id);
-	return_values.max_reqs = plat_scmi_sensor_max_requests(msg->agent_id); 
+	return_values.max_reqs = plat_scmi_sensor_max_requests(msg->agent_id);
 	len = plat_scmi_sensor_reg(msg->agent_id, addr);
 	if (len) {
 		return_values.sensor_reg_low = addr[0];
@@ -201,7 +201,7 @@ static void scmi_sensor_reading_get(struct scmi_msg *msg)
 		return;
 	}
 
-	ret = plat_scmi_sensor_reading_get(msg->agent_id, sensor_id, (uint32_t *)&return_values.val);
+	ret = plat_scmi_sensor_reading_get(msg->agent_id, sensor_id, &return_values.val);
 	if (ret) {
 		scmi_status_response(msg, SCMI_HARDWARE_ERROR);
 		return;
