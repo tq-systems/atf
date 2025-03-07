@@ -62,8 +62,10 @@ static struct imx_rdc_cfg rdc[] = {
 	RDC_MDAn(RDC_MDA_M7, DID1),
 
 	/* peripherals domain permission */
-	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
 	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
+	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
+	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
 	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
 
 	/* memory region */
@@ -110,9 +112,10 @@ static struct imx_rdc_cfg rdc[] = {
 	RDC_MDAn(RDC_MDA_M7, DID1),
 
 	/* peripherals domain permission */
-	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
+	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
 	RDC_PDAPn(RDC_PDAP_UART2, D0R | D0W),
-	RDC_PDAPn(RDC_PDAP_RDC, D0R | D0W | D1R),
+	RDC_PDAPn(RDC_PDAP_UART3, D0R | D0W | D1R | D1W | D2R | D2W | D3R | D3W),
+	RDC_PDAPn(RDC_PDAP_UART4, D1R | D1W),
 
 	/* memory region */
 	RDC_MEM_REGIONn(16, 0x0, 0x0, 0xff),
