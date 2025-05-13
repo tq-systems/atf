@@ -36,6 +36,12 @@ func plat_reset_handler
 	mov x29, x30
 	bl  apply_platform_errata
 
+	mrs	x0, CORTEX_A72_CPUACTLR_EL1
+	/* Set Snoop-delayed exclusive handling */
+	orr	x0, x0, #CORTEX_A72_CPUACTLR_EL1_DELAY_EXCLUSIVE_SNOOP
+	msr	CORTEX_A72_CPUACTLR_EL1, x0
+	isb
+
 #if defined(IMAGE_BL31)
 	ldr x0, =POLICY_SMMU_PAGESZ_64K
 	cbz x0, 1f
