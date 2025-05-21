@@ -16,8 +16,8 @@ BOARD_PATH		:=	${PLAT_SOC_PATH}/${BOARD}
 include ${PLAT_SOC_PATH}/soc.def
 include ${PLAT_COMMON_PATH}/soc_common_def.mk
 
-ifeq (${TRUSTED_BOARD_BOOT},1)
 $(eval $(call SET_FLAG,SMMU_NEEDED,BL2))
+ifeq (${TRUSTED_BOARD_BOOT},1)
 $(eval $(call SET_FLAG,SFP_NEEDED,BL2))
 $(eval $(call SET_FLAG,SNVS_NEEDED,BL2))
 SECURE_BOOT := yes

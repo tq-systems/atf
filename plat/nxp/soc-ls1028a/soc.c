@@ -17,8 +17,8 @@
 #include <platform_def.h>
 #include <plat_common.h>
 #include <plat_tzc400.h>
-#if TRUSTED_BOARD_BOOT
 #include <nxp_smmu.h>
+#if TRUSTED_BOARD_BOOT
 #include <snvs.h>
 #endif
 #if POLICY_OTA
@@ -134,6 +134,12 @@ void soc_early_init(void)
 		mmap_add_region(NXP_SD_BLOCK_BUF_ADDR, NXP_SD_BLOCK_BUF_ADDR,
 				NXP_SD_BLOCK_BUF_SIZE, MT_DEVICE | MT_RW | MT_NS);
 	}
+
+	/*
+	 * Unlock write access for SMMU SMMU_CBn_ACTLR in all Non-secure contexts.
+	 */
+	smmu_cache_unlock(NXP_SMMU_ADDR);
+	INFO("SMMU Cache Unlocking is Configured.\n");
 
 #if TRUSTED_BOARD_BOOT
 	uint32_t mode;
