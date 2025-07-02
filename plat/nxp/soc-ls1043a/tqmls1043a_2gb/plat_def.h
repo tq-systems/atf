@@ -10,14 +10,14 @@
 #define PLAT_DEF_H
 
 #include <arch.h>
-#include <policy.h>
 /*
  * Required without TBBR.
  * To include the defines for DDR PHY Images.
  */
 #include <tbbr_img_def.h>
 
-#include "soc.h"
+#include "policy.h"
+#include <soc.h>
 
 #define PLAT_DEF_DRAM0_SIZE	0x80000000	/* 2G */
 
