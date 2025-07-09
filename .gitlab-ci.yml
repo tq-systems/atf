@@ -65,6 +65,27 @@ compile:
         TARGET:
         - "IMX_LPUART_BASE=0x44380000 BUILD_BASE=${PLAT}-build-tfa bl31"
         - "IMX_LPUART_BASE=0x42690000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [
+              tqmls1012al_1gb,
+              tqmls1012al_512mb,
+              tqmls1028a_1gb,
+              tqmls1028a_2gb,
+              tqmls1028a_4gb,
+              tqmls1028a_8gb,
+              tqmls1043a_1gb,
+              tqmls1043a_2gb,
+              tqmls1043a_rev300_2gb,
+              tqmls1046a_2gb,
+              tqmls1046a_4gb,
+              tqmls1046a_8gb,
+              tqmls1088a_2gb,
+              tqmls1088a_4gb,
+              tqmlx2160a_16gb,
+              tqmlx2160a_32gb
+        ]
+        CONFIG: [ "DEBUG=1", "DEBUG=0" ]
+        TARGET:
+        - "PLAT=${PLAT} all"
   script:
     - echo "Building ${PLAT} with ${CONFIG}"
     - make -j$(nproc) CROSS_COMPILE=${CROSS_COMPILE} PLAT=${PLAT} ${CONFIG} ${TARGET}
