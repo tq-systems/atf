@@ -7,6 +7,7 @@
 
 #include <arch.h>
 #include <asm_macros.S>
+#include <cortex_a72.h>
 #include <cpu_macros.S>
 
 #include <platform_def.h>
