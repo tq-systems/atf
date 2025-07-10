@@ -89,7 +89,7 @@ int ddr_get_ddr_params(struct dimm_params *pdimm,
 	strlcpy(pdimm->mpart, dimm_model, sizeof(pdimm->mpart));
 
 	/* valid DIMM mask, change accordingly, together with dimm_on_ctlr. */
-	return 0x5;
+	return 0x3;
 }
 
 int ddr_board_options(struct ddr_info *priv)
