@@ -32,6 +32,9 @@
 #if defined(NXP_SFP_ENABLED)
 #include <sfp.h>
 #endif
+#if TRUSTED_BOARD_BOOT
+#include <snvs.h>
+#endif
 
 #include <errata.h>
 #ifdef CONFIG_OCRAM_ECC_EN
@@ -284,6 +287,7 @@ void soc_early_init(void)
 	soc_errata();
 
 #if (TRUSTED_BOARD_BOOT) || defined(POLICY_FUSE_PROVISION)
+	snvs_init(NXP_SNVS_ADDR);
 	sfp_init(NXP_SFP_ADDR);
 #endif
 
