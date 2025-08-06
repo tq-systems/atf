@@ -25,7 +25,7 @@
  * This would mean that only one active ctx can be there at a time.
  */
 
-static struct hash_ctx glbl_ctx;
+static struct hash_ctx glbl_ctx __aligned(CACHE_WRITEBACK_GRANULE);
 
 static void hash_done(uint32_t *desc, uint32_t status, void *arg,
 		      void *job_ring)
@@ -80,7 +80,11 @@ int hash_update(enum hash_algo algo, void *context, void *data_ptr,
 	}
 
 #if defined(SEC_MEM_NON_COHERENT) && defined(IMAGE_BL2)
-	flush_dcache_range((uintptr_t)data_ptr, data_len);
+	uintptr_t flush_start = round_down((uintptr_t)data_ptr,
+					   CACHE_WRITEBACK_GRANULE);
+	uintptr_t flush_end = round_up((uintptr_t)data_ptr + data_len,
+					   CACHE_WRITEBACK_GRANULE);
+	flush_dcache_range(flush_start, flush_end - flush_start);
 	dmbsy();
 #endif
 
@@ -138,8 +142,10 @@ int hash_final(enum hash_algo algo, void *context, void *hash_ptr,
 
 #if defined(SEC_MEM_NON_COHERENT) && defined(IMAGE_BL2)
 	flush_dcache_range((uintptr_t)ctx->sg_tbl,
-			   (sizeof(struct sg_entry) * MAX_SG));
-	inv_dcache_range((uintptr_t)hash_ptr, hash_len);
+			   round_up(sizeof(struct sg_entry) * MAX_SG,
+				    CACHE_WRITEBACK_GRANULE));
+	inv_dcache_range((uintptr_t)hash_ptr,
+			 round_up(hash_len, CACHE_WRITEBACK_GRANULE));
 
 	dmbsy();
 #endif
