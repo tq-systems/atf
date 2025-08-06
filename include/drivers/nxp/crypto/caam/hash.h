@@ -66,6 +66,9 @@ struct sg_entry {
  * index to the buffer
  */
 struct hash_ctx {
+	/*
+	 * sg_tbl must be aligned to CACHE_WRITEBACK_GRANULE
+	 */
 	struct sg_entry sg_tbl[MAX_SG];
 	uint32_t hash_desc[64];
 	uint8_t hash[SHA256_DIGEST_SIZE];
