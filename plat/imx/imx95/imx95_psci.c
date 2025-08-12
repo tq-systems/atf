@@ -18,6 +18,7 @@
 
 #include <drivers/arm/css/scmi.h>
 
+#include <ele_api.h>
 #include <plat_imx8.h>
 #include <scmi_imx9.h>
 
@@ -111,6 +112,8 @@ sleep_mode[7:4] – sleep mode performance level
 #define GPIO_PIN_MAX_NUM	U(32)
 #define GPIO_CTX(addr, num)	\
 	{.base = (addr), .pin_num = (num), }
+#define IMX95_SREV_A1		0xA1
+#define IMX95_SREV_B0		0xB0
 
 #define NETC_IREC_PCI_INT_X0	304
 
@@ -167,6 +170,8 @@ static struct scmi_cpu_pd_info cpu_info[] = {
 		.cpu_mem_pd_id = (uint32_t []){SCMI_PWR_MEM_SLICE_IDX_A55L3},
 	}
 };
+
+extern struct ele_soc_info soc_info;
 
 /* for GIC context save/restore if NOC lost power */
 struct plat_gic_ctx imx_gicv3_ctx;
@@ -228,6 +233,10 @@ struct gpio_ctx {
 	GPIO_CTX(GPIO4_BASE,  30),
 	GPIO_CTX(GPIO5_BASE,  18),
 };
+
+/* Silicon rev details. */
+static uint32_t si_rev;
+static uint32_t a55p_lpmsetting;
 
 /* context save/restore for wdog3-4 in wakeupmix */
 static uint32_t wdog_val[2][2];
@@ -412,8 +421,10 @@ void imx_set_sys_wakeup(uint32_t last_core, bool pdn)
 	 * Set IRQ wakeup mask for last core. As a workaorund for HW bug all wakeup
 	 * interrupts are directed to the cluster
 	 */
-	scmi_core_Irq_wake_set(imx95_scmi_handle, cpu_info[last_core].cpu_id,
-			       0, IMR_NUM, irq_mask);
+	if (si_rev < IMX95_SREV_B0) {
+		scmi_core_Irq_wake_set(imx95_scmi_handle, cpu_info[last_core].cpu_id,
+			0, IMR_NUM, irq_mask);
+	}
 
 	/* Set the GPC IMRs based on GIC IRQ mask setting */
 	for (i = 0; i < IMR_NUM; i++) {
@@ -434,13 +445,31 @@ void imx_set_sys_wakeup(uint32_t last_core, bool pdn)
 		}
 	}
 
+	if (si_rev >= IMX95_SREV_B0) {
+		/*
+		 * For B0 : wakeup sources are enabled in irq_mask for both core
+		 * and cluster. The GPC HW mechanism is use to wakeup the core.
+		 */
+		scmi_core_Irq_wake_set(imx95_scmi_handle, cpu_info[last_core].cpu_id,
+			0, IMR_NUM, irq_mask);
+		scmi_core_set_sleep_mode(imx95_scmi_handle, scmi_cpu_id[last_core],
+			wakeup_flags, mode);
+	}
+	else {
+		/*
+		 * For A1 all interrupts are directed to cluster, SM will powerup the core
+		 * specified as the resume core.
+		 */
+		scmi_core_set_sleep_mode(imx95_scmi_handle, scmi_cpu_id[last_core],
+			wakeup_flags | SCMI_RESUME_CPU, mode);
+
+	}
+
 	/* Set IRQ wakeup mask for the cluster */
 	scmi_core_Irq_wake_set(imx95_scmi_handle, cpu_info[IMX95_A55P_IDX].cpu_id,
-			       0, IMR_NUM, irq_mask);
+			0, IMR_NUM, irq_mask);
 
-	/* switch to GPC wakeup source, config the target mode to SUSPEND */
-	scmi_core_set_sleep_mode(imx95_scmi_handle, scmi_cpu_id[last_core],
-				 wakeup_flags | SCMI_RESUME_CPU, mode);
+	/* Set sleep mode for A55P */
 	scmi_core_set_sleep_mode(imx95_scmi_handle, scmi_cpu_id[IMX95_A55P_IDX],
 				 wakeup_flags, mode);
 
@@ -556,10 +585,8 @@ void imx_pwr_domain_off(const psci_power_state_t *target_state)
 	};
 
 	plat_gic_cpuif_disable();
-	/* Ensure the cluster can be powered off. */
-	write_clusterpwrdn(DSU_CLUSTER_PWR_OFF);
 
-	/* Ensure the cluster can be powered off. */
+	/* Ensure cluster can be powered off when all cores are off. */
 	write_clusterpwrdn(DSU_CLUSTER_PWR_OFF);
 
 	/* Configure core LPM state for hotplug. */
@@ -598,9 +625,9 @@ void imx_pwr_domain_suspend(const psci_power_state_t *target_state)
 
 	/* do cluster level config */
 	if (!is_local_state_run(CLUSTER_PWR_STATE(target_state))) {
-		/* L3 retention */
 		if (is_local_state_retn(CLUSTER_PWR_STATE(target_state))) {
-			write_clusterpwrdn(DSU_CLUSTER_PWR_OFF | BIT(1));
+			/* L3 retention */
+			write_clusterpwrdn(BIT(1));
 			l3_retn = BIT_32(SCMI_PWR_MEM_SLICE_IDX_A55L3);
 		} else {
 			write_clusterpwrdn(DSU_CLUSTER_PWR_OFF);
@@ -657,7 +684,6 @@ void imx_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 {
 	uint64_t mpidr = read_mpidr_el1();
 	uint32_t core_id = MPIDR_AFFLVL1_VAL(mpidr);
-	uint32_t val;
 	uint32_t sys_mode;
 
 	/* system level */
@@ -675,7 +701,7 @@ void imx_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 		struct scmi_lpm_config cpu_lpm_cfg[] = {
 			{
 				cpu_info[IMX95_A55P_IDX].cpu_pd_id,
-				SCMI_CPU_PD_LPM_ON_ALWAYS,
+				a55p_lpmsetting,
 				BIT_32(SCMI_PWR_MEM_SLICE_IDX_A55L3)
 			},
 			{
@@ -695,18 +721,6 @@ void imx_pwr_domain_suspend_finish(const psci_power_state_t *target_state)
 				       cpu_info[IMX95_A55P_IDX].cpu_id,
 				       sizeof(cpu_lpm_cfg)/sizeof(struct scmi_lpm_config),
 				       cpu_lpm_cfg);
-	}
-
-	/* cluster level */
-	if (!is_local_state_run(CLUSTER_PWR_STATE(target_state))) {
-		/*
-		 * clear DSU cluster power down if cluster power off is
-		 * aborted by wakeup
-		 */
-		val = read_clusterpwrdn();
-		val &= ~(DSU_CLUSTER_PWR_MASK | BIT(1));
-		val |= DSU_CLUSTER_PWR_ON;
-		write_clusterpwrdn(val);
 	}
 
 	/* do core level */
@@ -844,11 +858,15 @@ int plat_setup_psci_ops(uintptr_t sec_entrypoint,
 	scmi_core_nonIrq_wake_set(imx95_scmi_handle, scmi_cpu_id[0], 0, 1, mask);
 	scmi_core_nonIrq_wake_set(imx95_scmi_handle, scmi_cpu_id[IMX95_A55P_IDX], 0, 1, mask);
 
+	si_rev = soc_info.soc >> 24;
+	a55p_lpmsetting = (si_rev < IMX95_SREV_B0) ?
+			SCMI_CPU_PD_LPM_ON_ALWAYS : SCMI_CPU_PD_LPM_ON_RUN;
+
 	/* Setup A55 Cluster state for Cpuidle. */
 	struct scmi_lpm_config cpu_lpm_cfg[] = {
 		{
 			cpu_info[IMX95_A55P_IDX].cpu_pd_id,
-			SCMI_CPU_PD_LPM_ON_ALWAYS,
+			a55p_lpmsetting,
 			BIT_32(SCMI_PWR_MEM_SLICE_IDX_A55L3)
 		},
 		{

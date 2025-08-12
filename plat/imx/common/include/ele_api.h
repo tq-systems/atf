@@ -17,6 +17,8 @@ struct ele_soc_info {
 	uint32_t sha_fw[8];
 	uint32_t oem_srkh[16];
 	uint32_t state;
+	uint32_t oem_pqc_srkh[16];
+	uint32_t reserved[8];
 };
 
 int imx9_soc_info_handler(uint32_t smc_fid, void *handle);

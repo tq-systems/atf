@@ -15,7 +15,7 @@
 #define ELE_MU_TRx(i)	(ELE_MU_BASE + 0x200 + (i) * 4)
 #define ELE_MU_RRx(i)	(ELE_MU_BASE + 0x280 + (i) * 4)
 
-static struct ele_soc_info soc_info;
+struct ele_soc_info soc_info;
 
 int imx9_soc_info_handler(uint32_t smc_fid, void *handle)
 {
