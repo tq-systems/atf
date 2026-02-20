@@ -68,3 +68,5 @@ $(eval $(call add_define,IMX_CRRM))
 
 IMX_LPUART_BASE		?=	0x44380000
 $(eval $(call add_define,IMX_LPUART_BASE))
+IMX_CONSOLE_BAUDRATE	?=	4000000
+$(eval $(call add_define,IMX_CONSOLE_BAUDRATE))

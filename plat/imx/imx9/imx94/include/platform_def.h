@@ -53,7 +53,6 @@
 #endif
 
 #define IMX_BOOT_UART_CLK_IN_HZ		24000000 /* Select 24MHz oscillator */
-#define IMX_CONSOLE_BAUDRATE		4000000
 
 #define AIPSx_SIZE			U(0x800000)
 #define AIPS1_BASE			U(0x44000000)
