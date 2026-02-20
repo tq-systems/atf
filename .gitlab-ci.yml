@@ -65,6 +65,11 @@ compile:
         TARGET:
         - "IMX_LPUART_BASE=0x44380000 BUILD_BASE=${PLAT}-build-tfa bl31"
         - "IMX_LPUART_BASE=0x42690000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
+      - PLAT: [ imx94 ]
+        CONFIG: [ "DEBUG=1", "DEBUG=0" ]
+        TARGET:
+        - "IMX_LPUART_BASE=0x44380000 IMX_CONSOLE_BAUDRATE=115200 BUILD_BASE=${PLAT}-build-tfa bl31"
+        - "IMX_LPUART_BASE=0x42690000 BUILD_BASE=${PLAT}-build-optee SPD=opteed bl31"
       - PLAT: [
               tqmls1012al_1gb,
               tqmls1012al_512mb,
