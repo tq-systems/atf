@@ -65,3 +65,6 @@ BL32_SIZE               ?=      0x02000000
 $(eval $(call add_define,BL32_BASE))
 $(eval $(call add_define,BL32_SIZE))
 $(eval $(call add_define,IMX_CRRM))
+
+IMX_LPUART_BASE		?=	0x44380000
+$(eval $(call add_define,IMX_LPUART_BASE))
